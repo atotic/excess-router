@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+  <title>single route demo</title>
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+  <link rel="import" href="../iron-route.html">
+  <link rel="import" href="../iron-router-config.html">
+
+  <link rel="import" href="../../iron-selector/iron-selector.html">
+  <link rel="import" href="../../iron-pages/iron-pages.html">
+</head>
+<body>
+  <style>
+    iron-route[active] {
+      background-color: #AAA;
+    }
+    .iron-selected {
+      background-color: #AAA;
+    }
+    p {
+      margin: 4px;
+    }
+  </style>
+  <iron-router-config></iron-router-config>
+  <template is="dom-bind" id="t1">
+    <h3><a href="" target="_top">View</a> this demo in top window to view URL changes</h3>
+    <iron-route route="/abc/:selected"
+      selected="{{selected}}">
+      I am an /abc/:selected route that ties {{selected}} with the URL
+    </iron-route>
+    <hr>
+      <p> {{Selected}} is <span>{{selected}}</span></p>
+    <hr>
+    <p>Anchor navigation
+    <a href="#/abc/0">/abc/0</a>
+    <a href="#/abc/1">/abc/1</a>
+    <a href="#/abc/2">/abc/2</a>
+    </p>
+
+    <hr>
+    <p>iron-selector</p>
+    <iron-selector selected="{{selected}}">
+      <div>A</div>
+      <div>B</div>
+      <div>C</div>
+    </iron-selector>
+
+    <hr>
+    <p>iron-pages</p>
+    <iron-pages selected="{{selected}}">
+      <div>Page 0</div>
+      <div>Page 1</div>
+      <div>Page 2</div>
+    </iron-pages>
+
+    <hr>
+    <iron-route route="/(.*)">I am a .* route that matches everything</iron-route>
+
+
+  </template>
+
+  <script>
+    var t = document.querySelector('#t1');
+    t.selected = 0;
+  </script>
+
+</body>
+</html>

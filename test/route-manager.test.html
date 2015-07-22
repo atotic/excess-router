@@ -1,0 +1,240 @@
+<!doctype html>
+<!--
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<html>
+<head>
+
+  <title>route-manager test</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <script src="../../web-component-tester/browser.js"></script>
+
+  <link rel="import" href="../iron-route-manager.html">
+
+</head>
+<body>
+
+  <script>
+    suite('route-manager', function() {
+
+      setup( function() {
+        Polymer.RouteManagerTest.reset();
+        Polymer.RouteManagerTest.updateStateCb = function(url) {
+          console.log('update state', url);
+        }
+      });
+
+      test('configure', function() {
+        Polymer.RouteManager.configure({
+          autoStart: false,
+          basePath: 'blah',
+          hashPrefix: '#!',
+          aliasPathPrefix: '@#',
+          pathStyle: 'path'
+        });
+      });
+
+      test('register/unregister', function() {
+        var token = Polymer.RouteManager.register('/a/b/c');
+        Polymer.RouteManager.unregister(token);
+      });
+
+      test('register/unregister aliased', function() {
+        var alias = 'foo';
+        var token = Polymer.RouteManager.register('/a/b/c', {
+          alias: alias
+        });
+        var namedToken = Polymer.RouteManager.register('@foo');
+        assert.equal(Polymer.RouteManagerTest.routeType(token), 'standard');
+        assert.equal(Polymer.RouteManagerTest.routeType(namedToken), 'alias');
+        Polymer.RouteManager.unregister(token);
+        // we have an orphan
+        assert.equal(Polymer.RouteManagerTest.routeType(namedToken), 'orphan');
+        token = Polymer.RouteManager.register('/a/b/c', {
+          alias: alias
+        });
+        // orphan no nore
+        assert.equal(Polymer.RouteManagerTest.routeType(namedToken), 'alias');
+        Polymer.RouteManager.unregister(namedToken);
+        Polymer.RouteManager.unregister(token);
+      });
+
+      test('transitionTo', function() {
+        var t1calls = {}, t2calls = {};
+        var t1 = Polymer.RouteManager.register('/foo', {
+          willDeactivate: function() { t1calls.willDeactivate = true},
+          deactivate: function() { t1calls.deactivate = true},
+          willActivate: function() { t1calls.willActivate = true},
+          activate: function() { t1calls.activate =  true}
+        });
+        var t2 = Polymer.RouteManager.register('/bar', {
+          willDeactivate: function() { t2calls.willDeactivate = true},
+          deactivate: function() { t2calls.deactivate = true},
+          willActivate: function() { t2calls.willActivate = true},
+          activate: function() { t2calls.activate =  true}
+        });
+        Polymer.RouteManager.transitionTo(t1);
+        assert.isTrue(t1calls.willActivate);
+        assert.isTrue(t1calls.activate);
+        Polymer.RouteManager.transitionTo(t2);
+        assert.isTrue(t1calls.willDeactivate);
+        assert.isTrue(t1calls.deactivate);
+        assert.isTrue(t2calls.willActivate);
+        assert.isTrue(t2calls.activate);
+      });
+
+      test('transitionTo async', function() {
+        var t1calls = {}, t2calls = {};
+        var t1 = Polymer.RouteManager.register('/foo', {
+          willDeactivate: function(transition, done) { t1calls.willDeactivate = true; done()},
+          deactivate: function(transition, done) { t1calls.deactivate = true; done()},
+          willActivate: function(transition, params, done) { t1calls.willActivate = true; done()},
+          activate: function(transition, params, done) { t1calls.activate =  true; done()}
+        });
+        var t2 = Polymer.RouteManager.register('/bar', {
+          willDeactivate: function(transition, done) { t2calls.willDeactivate = true; done()},
+          deactivate: function(transition, done) { t2calls.deactivate = true; done()},
+          willActivate: function(transition, params, done) { t2calls.willActivate = true; done()},
+          activate: function(transition, params, done) { t2calls.activate =  true; done()}
+        });
+        Polymer.RouteManager.transitionTo(t1);
+        assert.isTrue(t1calls.willActivate);
+        assert.isTrue(t1calls.activate);
+        Polymer.RouteManager.transitionTo(t2);
+        assert.isTrue(t1calls.willDeactivate);
+        assert.isTrue(t1calls.deactivate);
+        assert.isTrue(t2calls.willActivate);
+        assert.isTrue(t2calls.activate);
+      });
+
+      test('transitionTo alias route', function() {
+        var t1calls = {}, t2calls = {};
+        var t1 = Polymer.RouteManager.register('/foo', {
+          alias: 'foo',
+          willDeactivate: function(transition, done) { t1calls.willDeactivate = true; done()},
+          deactivate: function(transition, done) { t1calls.deactivate = true; done()},
+          willActivate: function(transition, params, done) { t1calls.willActivate = true; done()},
+          activate: function(transition, params, done) { t1calls.activate =  true; done()}
+        });
+        var t2 = Polymer.RouteManager.register('@foo', {
+          willDeactivate: function(transition, done) { t2calls.willDeactivate = true; done()},
+          deactivate: function(transition, done) { t2calls.deactivate = true; done()},
+          willActivate: function(transition, params, done) { t2calls.willActivate = true; done()},
+          activate: function(transition, params, done) { t2calls.activate =  true; done()}
+        });
+        Polymer.RouteManager.transitionTo(t2);
+        assert.isTrue(t1calls.willActivate);
+        assert.isTrue(t1calls.activate);
+        assert.isTrue(t2calls.willActivate);
+        assert.isTrue(t2calls.activate);
+      });
+
+      test('getRoutePath', function() {
+        var path = '/a/b/c';
+
+        var token = Polymer.RouteManager.register('/a/b/c');
+        var route = Polymer.RouteManagerTest.routeFromToken(token);
+        var url = route.getRoutePath();
+        assert.equal(url, '/a/b/c');
+        var token = Polymer.RouteManager.register('/:foo/b/c');
+        var route = Polymer.RouteManagerTest.routeFromToken(token);
+        var url = route.getRoutePath({ foo: 'bar'});
+        assert.equal(url, '/bar/b/c');
+      });
+
+      test('_urlFromRoutePath', function() {
+        Polymer.RouteManager.configure({
+          basePath: '/foo',
+          hashPrefix: '#!',
+          pathStyle: 'path'
+        });
+        var p = Polymer.RouteManager._urlFromRoutePath('/bar');
+        assert.equal(p, '/foo/bar');
+        Polymer.RouteManager.configure({
+          basePath: '/foo',
+          hashPrefix: '#!',
+          pathStyle: 'hash'
+        });
+        p = Polymer.RouteManager._urlFromRoutePath('/bar');
+        assert.equal(p, '#!/bar');
+      });
+
+      test('_matchToRouteParams', function() {
+        var t = Polymer.RouteManager.register('/foo/:bar/:baz');
+        var route = Polymer.RouteManagerTest.routeFromToken(t);
+        var match = route.regexp.exec('/foo/bar/baz');
+        var routeParams = route._matchToRouteParams(match);
+        assert.equal(routeParams.bar, 'bar');
+        assert.equal(routeParams.baz, 'baz');
+      });
+
+      test('_setRouteFromLocation', function() {
+        Polymer.RouteManager.configure({
+          pathStyle: 'path'
+        });
+        var t1calls = {}, t2calls = {};
+        var t1 = Polymer.RouteManager.register('/foo', {
+          willDeactivate: function() { t1calls.willDeactivate = true},
+          deactivate: function() { t1calls.deactivate = true},
+          willActivate: function() { t1calls.willActivate = true},
+          activate: function() { t1calls.activate =  true}
+        });
+        window.history.replaceState(null, "", '/foo');
+        Polymer.RouteManager._setRouteFromLocation();
+        assert.isTrue(t1calls.activate);
+        var t2 = Polymer.RouteManager.register('/bar', {
+          willDeactivate: function(transition, done) { t2calls.willDeactivate = true; done()},
+          deactivate: function(transition, done) { t2calls.deactivate = true; done()},
+          willActivate: function(transition, params, done) { t2calls.willActivate = true; done()},
+          activate: function(transition, params, done) { t2calls.activate =  true; done()}
+        });
+        window.history.replaceState(null, "", '/bar');
+        Polymer.RouteManager._setRouteFromLocation();
+        assert.isTrue(t1calls.deactivate);
+        assert.isTrue(t2calls.activate);
+      });
+
+      test('transitionRedirect', function() {
+        var t1calls = {}, t2calls = {}, t3calls = {};
+        var t1 = Polymer.RouteManager.register('/foo', {
+          willDeactivate: function() { t1calls.willDeactivate = true},
+          deactivate: function() { t1calls.deactivate = true},
+          willActivate: function() { t1calls.willActivate = true},
+          activate: function() { t1calls.activate =  true}
+        });
+        var t2 = Polymer.RouteManager.register('/bar/:baz', {
+           activate: function(transition, params) {t2calls.routeParams = params.routeParams;}
+        });
+        var t3 = Polymer.RouteManager.register('/bar', {
+          willActivate: function(transition, params) {
+            t3calls.willActivate = true;
+            transition.abort({
+              redirectTo: t2,
+              redirectParams: {baz: "BAZ"}
+            });
+          },
+        });
+        window.history.replaceState(null, "", '/foo');
+        Polymer.RouteManager._setRouteFromLocation();
+        // now t1 is active
+        Polymer.RouteManager.transitionTo(t3);
+        // t2 will redirect to t3
+        assert.equal("BAZ", t2calls.routeParams.baz);
+
+      });
+    });
+
+
+  </script>
+
+</body>
+</html>

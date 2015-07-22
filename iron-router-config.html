@@ -1,0 +1,112 @@
+<!--
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+@license
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="iron-route-manager.html">
+
+<script>
+
+/**
+`iron-router-config` configures Polymer.RoutingManager routing library
+
+Examples:
+
+    <just-router-config
+      path-style="hash"
+      hash-prefix="#!"
+    ></just-router-config>
+
+    <just-router-config
+      path-style="path"
+      base-prefix="/my"
+    ></just-router-config>
+
+Notes:
+*/
+  Polymer({
+
+    is: 'iron-router-config',
+
+    properties: {
+
+      /**
+       * True if `<a href=` navigation should try router links first
+       */
+      anchorRouting: {
+        type: Boolean,
+        value: true
+      },
+      /**
+       * True if RouteManager starts on WebComponentsReady.
+       * If false, you must call RouterManager.start manually
+       */
+      autoStart: {
+        type: Boolean,
+        value: true
+      },
+      /**
+       * base path for path-based routing. Use it if your app is not mounted at the root.
+       * Example: app mounted on "http://example.com/polymerExamples/foo" should set the base path to `/polymerExamples/foo`
+       */
+      basePath: {
+        type: String,
+        value: ''
+      },
+
+      /**
+       * prefix for hash paths, must start with '#'
+       */
+      hashPrefix: {
+        type: String,
+        value: '#'
+      },
+
+      /**
+       * prefix for alias style paths
+       */
+      aliasPathPrefix: {
+        type: String,
+        value: '@'
+      },
+      /**
+       * 'hash' for '#' routing, 'path' for paths
+       */
+      pathStyle: {
+        type: String,
+        value: 'hash'
+      },
+
+      /**
+       * prefix for internally generated path tokens
+       */
+      tokenPrefix: {
+        type: String,
+        value: 'toke-'
+      }
+
+    },
+
+    observers: [
+      '_configurationChanged(anchorRouting, autoStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix)'
+    ],
+
+    _configurationChanged: function(anchorRouting, autoStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix) {
+      Polymer.RouteManager.configure({
+        anchorRouting: anchorRouting,
+        autoStart: autoStart,
+        basePath: basePath,
+        hashPrefix: hashPrefix,
+        aliasPathPrefix: aliasPathPrefix,
+        pathStyle: pathStyle,
+        tokenPrefix: tokenPrefix
+      });
+    }
+  });
+
+</script>

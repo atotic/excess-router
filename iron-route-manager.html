@@ -1,0 +1,1003 @@
+<link rel="import" href="../polymer/polymer.html">
+<script src="pathToRegexp.js"></script>
+<script>
+(function() {
+  'use strict';
+
+
+/** TECH NOTES
+Transition sequence:
+  willDeactivate, deactivate, willActivate, activate
+  I'd switch it to:
+  willDeactivate, willActivate, deactivate, activate
+  Because aborting transaction in willActivate leaves us without a route
+ */
+
+
+  function regexKeysToArray(regexKeys) {
+    var keys = [];
+    for (var i=0; i<regexKeys.length; i++) {
+      if (regexKeys[i].name) {
+        keys.push(regexKeys[i].name);
+      }
+    }
+    return keys;
+  }
+  /** ES6 [].find polyfill */
+  function ArrayFind(array, compareFn) {
+    for (var i=0; i<array.length; i++) {
+      if (compareFn(array[i]))
+        return array[i];
+    }
+  }
+  /**
+  RouterState stores RouteManager configuration.
+  It provides utility routines for state manipulation.
+  Use the routines, instead of manipulating state directly.
+  */
+  var RouterState = {
+    // registered routes (excluding aliased)
+    routes: [],
+
+    // registered alias routes
+    aliasRoutes: [],
+
+    // alias routes without a parent
+    orphanAliasRoutes: [],
+
+    // registered routes alias map --  Map(alias->Route)
+    routesByAlias: {},
+
+    // active route
+    activeRoute: null,
+
+    // current transition
+    activeTransition: null,
+
+  // Configuration variables
+
+    // anchorRouting
+    anchorRouting: true,
+
+    // true if routing should start automatically on WebComponentsReady
+    autoStart: true,
+
+    // base path for path routing
+    basePath: '',
+
+    // prefix for hash paths
+    hashPrefix: '#',
+
+    // Routes starting with aliasPathPrefix will be interpreted as aliases
+    aliasPathPrefix: '@',
+
+    // hash|path
+    pathStyle: 'hash',
+
+    // Routes starting with token prefix are tokens
+    tokenPrefix: 'toke-',
+
+    addRoute: function(route) {
+      // register route's alias
+      if (route.alias) {
+        if (this.routesByAlias[route.alias]) {
+          console.error(this._routesByAlias[route.alias]);
+          throw new Error("Cant register two routes with same alias. "
+            + route.alias + "has already been registered.");
+        }
+        this.routesByAlias[route.alias] = route;
+      }
+
+      this.routes.push(route);
+
+      // process orphan routes
+      if (route.alias) {
+        var x = this.orphanAliasRoutes
+          .filter(function(o) {
+            return o.alias === route.alias;
+          });
+        this.orphanAliasRoutes
+          .filter(function(o) {
+            return o.alias === route.alias;
+          })
+          .forEach(function(o) {
+            this.orphanAliasRoutes.splice( this.orphanAliasRoutes.indexOf(o), 1);
+            o.setParent(route);
+          }.bind(this));
+      }
+    },
+
+    removeRoute: function(route) {
+      var idx = this.routes.indexOf(route);
+
+      if (this.activeRoute === route) {
+        console.warn('removing currently active route');
+        this.setActiveRoute(null);
+        RouteManager._setRouteFromLocation();
+      }
+      var route = this.routes[idx];
+      var alias;
+      // orphan routes aliased to this one
+      while (alias = route.aliasRoutes[0]) {
+        alias.setParent(null);
+        this.addOrphanRoute(alias);
+      }
+      // if route was aliased, remove it from the list
+      if (route.alias) {
+        delete this.routesByAlias[route.alias];
+      }
+      this.routes.splice(idx, 1);
+    },
+
+    addAliasRoute: function(route) {
+      var parent = this.routesByAlias[route.alias];
+      if (parent) {
+        this.aliasRoutes.push(route);
+        route.setParent(parent);
+      }
+      else {
+        this.addOrphanRoute(route);
+      }
+    },
+
+    removeAliasRoute: function(route) {
+      var idx = this.aliasRoutes.indexOf(route);
+      this.aliasRoutes[idx].setParent(null);
+      this.aliasRoutes.splice(idx, 1);
+    },
+
+    addOrphanRoute: function(route) {
+      this.orphanAliasRoutes.push(route);
+    },
+
+    removeOrphanRoute: function(route) {
+      var idx = this.orphanAliasRoutes.indexOf(route);
+      this.orphanAliasRoutes.splice(idx, 1);
+    },
+
+    removeToken: function(token) {
+      var compare = Route.compareByToken(token);
+      var route = ArrayFind(this.routes, compare);
+      if (route) {
+        this.removeRoute(route);
+        return;
+      }
+      route = ArrayFind(this.aliasRoutes, compare);
+      if (route) {
+        this.removeAliasRoute(route);
+        return;
+      }
+      route = ArrayFind( this.orphanAliasRoutes, compare);
+      if (route) {
+        this.removeOrphanRoute(route);
+        return;
+      }
+      console.warn('Could not remove route with token', token);
+    },
+
+    cancelActiveTransition: function() {
+      if (!this.activeTransition) {
+        return;
+      }
+      this.activeTransition.abort();
+    },
+
+    startTransition: function(transition) {
+      this.cancelActiveTransition();
+      this.activeTransition = transition;
+      transition.start();
+    },
+
+    completeTransition: function(transition) {
+      if (this.activeTransition === transition)
+        this.activeTransition = null;
+    },
+
+    setActiveRoute: function(route) {
+      this.activeRoute = route;
+    }
+  }
+
+  /**
+  RouteManagerTest is a collection of functions only used in tests
+  */
+  var RouteManagerTest = {
+
+    reset: function() {
+      RouterState.routes = [];
+      RouterState.aliasRoutes = [];
+      RouterState.orphanAliasRoutes = [];
+      RouterState.routesByAlias = {};
+      RouterState.activeRoute = null;
+      RouterState.pathStyle = 'hash';
+      RouterState.basePath = '';
+      RouterState.autoStart = true;
+      RouterState.hashPrefix = '#';
+      RouterState.aliasPathPrefix = '@';
+    },
+    routeType: function(token) {
+      var compare = Route.compareByToken(token);
+      if( ArrayFind(RouterState.routes, compare)) {
+        return 'standard';
+      }
+      else if (ArrayFind(RouterState.orphanAliasRoutes, compare)) {
+        return 'orphan';
+      }
+      else if (ArrayFind(RouterState.aliasRoutes, compare)) {
+        return 'alias';
+      }
+      return null;
+    },
+    routeFromToken: function(token) {
+      var compare = Route.compareByToken(token);
+      return ArrayFind(RouterState.routes, compare) ||
+        ArrayFind(RouterState.aliasRoutes, compare) ||
+        null;
+    },
+
+    print: function() {
+      console.log("RouteManager");
+      RouterState.routes.forEach(function(r) {
+        console.log(r.toString());
+      });
+      if (RouterState.orphanAliasRoutes.length > 0) {
+        console.log('orphans');
+        RouterState.orphanAliasRoutes.forEach(function(r) {
+          console.log(r.toString());
+        });
+      }
+    },
+    updateStateCb: null // can be replaced with function(url) {} for testing
+  }
+
+
+/**
+  RouteManager is a routing library.
+
+  ### Features:
+  - Express-style path matching
+    '/foo/:bar/:baz', '/foo/*'
+  - '/' or '#!' paths
+  - route transition callbacks: willDeactivate, willActivate, deactivate, activate
+    callbacks are sync|async
+    transitions can be aborted, redirected
+  - route aliases:
+    register('/home/login', { alias: 'login'}); transitionTo('@login');
+  - navigation API: transitionTo, replaceWith
+  - anchor tag routing, intercepts clicks
+
+### Path spec:
+
+  Paths are Express-style path strings, such as `/user/:id`.
+  See [path-to-regex library](https://github.com/pillarjs/path-to-regexp)
+  for detailed Express-style path information.
+
+### Configuration:
+
+  @polymerBehavior Polymer.RouteManager
+  */
+  var RouteManager = {
+
+    /**
+     * @param {object} options --
+     * @param {string} options.autoStart -- start on WebComponentsReady
+     * @param {string} options.pathStyle -- hash/path
+     * @param {string} options.basePath -- base path for path routing
+     * @param {string} options.hashPrefix -- hash prefix: default '#', set '#!' if you need it
+     * @param {string} options.aliasPathPrefix -- paths with this prefix are considered alias. default '@'
+     */
+    configure: function(options) {
+      [
+        'anchorRouting',
+        'autoStart',
+        'basePath',
+        'hashPrefix',
+        'aliasPathPrefix',
+        'pathStyle',
+        'tokenPrefix'
+      ].forEach( function(p) {
+        if (p in options) {
+          RouterState[p] = options[p];
+        }
+      });
+      if (!RouterState.hashPrefix.startsWith('#')) {
+        throw new Error('hashPrefix must start with #');
+      }
+    },
+
+    /**
+     * Registers a route
+     *
+     * @param {string} path -- Path string
+     * @param {object} options --
+     * @param {string} options.alias -- route alias
+     * @param {boolean} options.isAliasRoute -- true if this is a aliasd route
+     * @return {string}} -- token, you need this to unregister
+     */
+    register: function(path, options) {
+      options = options || {};
+      var route;
+      if (options.isAliasRoute || this.getRouteType(path) === 'alias') {
+        route = new AliasRoute(path, options);
+        RouterState.addAliasRoute(route);
+      }
+      else {
+        route = new Route(path, options);
+        RouterState.addRoute(route);
+      }
+      return route.token;
+    },
+
+    unregister: function(token) {
+      RouterState.removeToken(token);
+    },
+
+    _findRouteByToken: function(token) {
+      var compare = Route.compareByToken(token);
+      var destination = ArrayFind(RouterState.routes, compare);
+      if (!destination) {
+        destination = ArrayFind(RouterState.aliasRoutes, compare);
+        if (!destination) {
+          throw new Error('route not found ' +  token);
+        }
+      }
+      return destination;
+    },
+
+    _urlFromRoutePath: function(routePath) {
+      if (RouterState.pathStyle === 'hash') {
+        return RouterState.hashPrefix + routePath;
+      }
+      else {
+        return RouterState.basePath + routePath;
+      }
+    },
+
+    _getPushStateCallback: function() {
+      return RouteManagerTest.updateStateCb ||
+        function(routePath) {
+          window.history.pushState(null, "",
+            RouteManager._urlFromRoutePath(routePath));
+        }
+    },
+
+    _getReplaceStateCallback: function() {
+      return RouteManagerTest.updateStateCb ||
+        function(routePath) {
+          window.history.replaceState(null, "",
+            RouteManager._urlFromRoutePath(routePath));
+        }
+    },
+
+    /**
+     * @param {string} -- route. Can be token ('toke-AV213'), alias ('@user'), or path ('/this/is/path')
+     * @return {'alias'|'token'|'path'} -- kind of path this is
+     */
+    getRouteType: function(routeSpecifier) {
+      if (routeSpecifier === null) {
+        return null;
+      }
+      else if (RouterState.aliasPathPrefix &&
+        routeSpecifier.startsWith(RouterState.aliasPathPrefix)) {
+        return 'alias';
+      }
+      else if (RouterState.tokenPrefix &&
+        routeSpecifier.startsWith(RouterState.tokenPrefix)) {
+        return 'token';
+      }
+      else {
+        return 'path';
+      }
+    },
+
+    /**
+     *
+     * @return {array} -- array of keys for given route
+     */
+    getRouteKeys: function(routeSpecifier) {
+      switch(this.getRouteType(routeSpecifier)) {
+        case 'alias':
+        case 'token':
+          var r = this._findRouteByToken(routeSpecifier).resolveAlias();
+          if (!r) {
+            throw new Error("Route, or route's alias not registered");
+          }
+        return r.keys();
+        case 'path':
+          var keys = [];
+          pathToRegexp(routeSpecifier, keys, { sensitive: true, strict: true });
+          return regexKeysToArray(keys);
+      }
+    },
+
+    concatPaths: function(parentPath, childPath) {
+      if (!childPath) {
+        return null;
+      }
+      switch(this.getRouteType(childPath)) {
+        case 'alias':
+          return childPath;
+        case 'token':
+          throw new Error('Child path cannot be a path token');
+        case 'path':
+          return parentPath ? parentPath + childPath : childPath;
+      }
+    },
+
+    /**
+     * finds matching route given a path
+     * @return {{route: route, routeParams: params}}
+     */
+    _matchRoutes: function(path) {
+     for (var i=0; i<RouterState.routes.length; i++) {
+        var routeParams = RouterState.routes[i].match(path);
+        if (routeParams) {
+          return {
+            route: RouterState.routes[i],
+            routeParams:routeParams
+          }
+        }
+      }
+      return null;
+    },
+
+    _findDestination: function(destination, routeParams) {
+      switch( this.getRouteType(destination)) {
+        case 'alias':
+        case 'token':
+          var route = this._findRouteByToken(destination).resolveAlias();
+          if (route) {
+            return { route: route, routeParams: routeParams }
+          }
+          return;
+        case 'path':
+          return this._matchRoutes(destination);
+      }
+    },
+
+    /**
+     * Transition to new route,
+     * @param {token|alias|path} -- destination can be token,alias,or path
+     */
+    transitionTo: function(destination, routeParams) {
+      var dest = this._findDestination(destination, routeParams);
+      if (!dest) {
+        throw new Error("Transition destination not found");
+      }
+      var transition = new Transition(
+        RouterState.activeRoute,
+        dest.route,
+        {
+          routeParams: dest.routeParams,
+          updateLocationCb: this._getPushStateCallback()
+        }
+      );
+      RouterState.startTransition(transition);
+    },
+
+    /**
+     * Transition to new route, but replace existing URL in place (no history)
+     */
+    replaceWith: function(destination, routeParams) {
+      var dest = this._findDestination(destination, routeParams);
+      if (!dest) {
+        throw new Error("Transition destination not found");
+      }
+      var transition = new Transition(
+        RouterState.activeRoute,
+        dest.route,
+        {
+          routeParams: dest.routeParams,
+          updateLocationCb: this._getPushStateCallback()
+        }
+      );
+      RouterState.startTransition(transition);
+    },
+
+    _startAnchorRouting: function() {
+      if (!RouterState.anchorRouting) {
+        if (this._anchorRoutingListener) {
+          document.removeEventListener(this._anchorRoutingListener);
+          delete this._anchorRoutingListener;
+        }
+      }
+      else {
+        if (!this._anchorRoutingListener) {
+          this._anchorRoutingListener = document.addEventListener('click', function(ev) {
+            if (ev.target.nodeName === 'A') {
+              try {
+                var href = ev.target.getAttribute('href');
+                if (href.startsWith(RouterState.hashPrefix)) {
+                  href = href.replace(RouterState.hashPrefix, '');
+                }
+                if (href) {
+                  this.transitionTo(href);
+                  ev.preventDefault();
+                }
+              }
+              catch(err) {
+                console.warn('anchor route not found', href);
+              }
+            }
+          }.bind(this));
+        }
+      }
+    },
+
+    start: function() {
+      if (this._started) {
+        console.warn('RouteManager.start called more than once');
+        return;
+      }
+      this._started = true;
+      this._setRouteFromLocation();
+      this._startAnchorRouting();
+    },
+
+    /**
+     * gets canonical path from window.location
+     */
+    _extractLocationPath: function() {
+      var path;
+
+      if (RouterState.pathStyle === 'path') {
+        // Parse path-style path
+        if (!window.location.pathname) {
+          path = '/';
+        }
+        else if (RouterState.basePath) {
+          var match = window.location.pathname.match(RouterState.basePath + "(.*}");
+          if (!match) {
+            console.error("Base path does not match window.location");
+          }
+          else
+            path = match[1];
+        }
+        else { // no basePath
+          path = window.location.pathname;
+        }
+      }
+      else { // _pathStyle === 'hash'
+        // Parse hash-style path
+        if (!window.location.hash) {
+          path = '/';
+        } else {
+          path = window.location.hash.replace(RouterState.hashPrefix, '');
+          if (path[0] != '/') // ordinary hash?
+            path = undefined;
+        }
+      }
+      return path;
+    },
+
+    _setRouteFromLocation: function() {
+      var path = this._extractLocationPath();
+      if (!path) {
+        console.warn('popstate could not extract path',
+          window.location.pathname);
+        return;
+      }
+      var match = this._matchRoutes(path);
+      if (match) {
+        var transition = new Transition(
+          RouterState.activeRoute,
+          match.route,
+          { routeParams: match.routeParams }
+        );
+        RouterState.startTransition(transition);
+      }
+      else {
+        console.warn('no matching routes found in popstate');
+      }
+    },
+
+    _handlePopState: function(ev) {
+      this._setRouteFromLocation();
+    },
+
+    _handleHashChange: function(ev) {
+      if (RouterState.pathStyle !== 'hash') {
+        return;
+      }
+      var path = this._extractLocationPath();
+      if (!path) {
+        console.warn('hashchange could not extract path',
+          window.location.hash);
+      }
+    },
+
+    _decodeAliasPath: function(path) {
+      if (path.startsWith(RouterState.aliasPathPrefix)) {
+        return path.replace(RouterState.aliasPathPrefix, '');
+      }
+      else {
+        console.warn('alias path without prefix', path);
+        return path;
+      }
+    }
+  }
+
+  window.addEventListener('WebComponentsReady', function() {
+    if (RouterState.autoStart) {
+      RouteManager.start();
+    }
+  }.bind(RouteManager));
+
+  window.addEventListener('popstate',
+    RouteManager._handlePopState.bind(RouteManager));
+
+  window.addEventListener('hashchange',
+    RouteManager._handleHashChange.bind(RouteManager));
+
+  /**
+   * Route represents a single route
+   */
+  var Route = function(path, options) {
+    this.token = RouterState.tokenPrefix + randomString(6);
+    this.path = path;
+    this.regexKeys = []; // keys from pathToRegexp
+    this.regexp = pathToRegexp(this.path, this.regexKeys,
+      { sensitive: true, strict: true });
+    this.pathGenerator = pathToRegexp.compile(this.path);
+    this.aliasRoutes = [];
+
+    this.alias = options ? options.alias : undefined;
+    this.willDeactivate = options ? options.willDeactivate : undefined;
+    this.deactivate = options ? options.deactivate : undefined;
+    this.willActivate = options ? options.willActivate : undefined;
+    this.activate = options ? options.activate : undefined;
+  }
+
+  /**
+   * token comparasance routine for [].find
+   */
+  Route.compareByToken = function(token) {
+    return function(r) {
+      return r.token === token;
+    }
+  }
+
+  Route.prototype = {
+
+    /**
+     *  @return {array|null} -- routeParams if route matches path
+     */
+    match: function(path) {
+      var m = this.regexp.exec(path);
+      if (m) {
+        return this._matchToRouteParams(m);
+      }
+      else {
+        return null;
+      }
+    },
+
+    /**
+     * converts regex match to routeParams map
+     */
+    _matchToRouteParams: function(match) {
+      var routeParams = {};
+      for (var i=1; i<match.length; i++) {
+        if (this.regexKeys[i-1].name) {
+          routeParams[this.regexKeys[i-1].name] = match[i];
+        }
+      }
+      return routeParams;
+    },
+
+    toString: function() {
+      var s = this.path;
+      if (this.alias) {
+        s += ' ' + this.alias;
+      }
+      if (this.aliasRoutes.length > 0) {
+        s += '\n';
+        this.aliasRoutes.forEach(function(r) {
+          s += '\t' + r.toString() + '\n';
+        });
+      }
+      return s;
+    },
+
+    addAliasRoute: function(route) {
+      if (route.alias != this.alias) {
+        throw new Error("mismatched alias route ", + route.alias + " " + this.alias);
+      }
+      this.aliasRoutes.push(route);
+    },
+
+    removeAliasRoute: function(route) {
+      var idx = this.aliasRoutes.indexOf(route);
+      if (idx === -1) {
+        console.warn("removeAliasRoute: nonexistent route", route);
+      }
+      else {
+        this.aliasRoutes.splice(idx, 1);
+      }
+    },
+
+    getRoutePath: function(routeParams) {
+      return this.pathGenerator(routeParams);
+    },
+
+    resolveAlias: function() {
+      return this;
+    },
+
+    /**
+     * @return {array} -- names of all route parameters. Ex: "/:foo/:bar" => ['foo', 'bar']
+     */
+    keys: function() {
+      return regexKeysToArray(this.regexKeys);
+    }
+  }
+
+  var AliasRoute = function(path, options) {
+    this.token = RouterState.aliasPathPrefix + randomString(6);
+    this.alias = RouteManager._decodeAliasPath(path);
+
+    this.willDeactivate = options ? options.willDeactivate : undefined;
+    this.deactivate = options ? options.deactivate : undefined;
+    this.willActivate = options ? options.willActivate : undefined;
+    this.activate = options ? options.activate : undefined;
+
+    return this.token;
+  }
+
+  AliasRoute.prototype = {
+
+    setParent: function(parent) {
+      if (this.parent) {
+        this.parent.removeAliasRoute(this);
+      }
+      this.parent = parent;
+      if (this.parent) {
+        this.parent.addAliasRoute(this);
+      }
+    },
+
+    toString: function() {
+      return this.alias;
+    },
+
+    resolveAlias: function() {
+      if (!this.parent) {
+        throw new Error('alias cant be resolved');
+      }
+      return this.parent;
+    }
+
+  }
+
+  /**
+   * Transition oversees transition lifecycle:
+   * The lifecycle is:
+   * source.willDeactivate
+   * source.deactivate
+   * destination.willActivate
+   * destination.activate
+   *
+   * willDeactivate/willActivate
+   *
+   */
+  /**
+   * @callback Transition~callback
+   * @param {Transition} transition -- Transition
+   * @param {function} done -- optional async callback, if omitted call is sync
+   *
+   * Call transaction.abort to abort transition in the callback
+   *
+   * Recognized errors:
+   * RedirectError: -- redirect to another route
+   * DoThisFirstError --
+   */
+
+  /**
+   * @param {Route} source -- source route
+   * @param {Route} destination -- destination route
+   * @param {function} updateLocationCb --
+   */
+  var Transition = function(source, destination, options) {
+    this.source = source;
+    if (!destination) {
+      throw new Error('Transition without destination');
+    }
+    this.destination = destination;
+
+    this._updateLocationCb = options ? options.updateLocationCb : null;
+    this._routeParams = options ? options.routeParams : null;
+  }
+
+  Transition.prototype = {
+
+    /**
+     * @param {object} abortOptions
+     * @param {string} abortOptions.redirectTo -- abort existing transaction and redirectTo
+     */
+    abort: function(abortOptions) {
+      if (this.aborted) // only first abort counts
+        return;
+      this.aborted = true;
+      if (abortOptions) {
+        if (abortOptions.redirectTo) {
+          RouteManager.transitionTo(abortOptions.redirectTo, abortOptions.redirectParams);
+        } else if (abortOptions.prerequisite) {
+          TODO("handle prerequisite");
+        }
+      }
+      this._complete();
+    },
+
+    start: function() {
+      this._willDeactivate();
+    },
+
+    /**
+     * get callbacks from route, and all its aliasRoutes
+     * @return {array[callbacks]}
+     */
+    _gatherCallbacks: function(route, callbackName) {
+      var callbacks = [];
+      if (route === null) {
+        return callbacks;
+      }
+      if (route[callbackName]) {
+        callbacks.push(route[callbackName]);
+      }
+      for (var i=0; i<route.aliasRoutes.length; i++) {
+        if (route.aliasRoutes[i][callbackName]) {
+          callbacks.push(route.aliasRoutes[i][callbackName]);
+        }
+      }
+      return callbacks;
+    },
+
+    /**
+     * processes all callbacks asynchronously, call done on completion
+     *
+     * @param {array(function)} callbacks
+     * @param {array} cbArgs
+     * @param {function} done -- completion callback
+     */
+    _processCallbacks: function(callbacks, cbArgs, done) {
+      // process all synchronous callbacks first
+      if (callbacks.length === 0) {
+        done();
+        return;
+      }
+      var remaining = callbacks.length;
+      function decrementRemaining() {
+        // calls done when all callbacks complete
+        if (--remaining === 0) {
+          done();
+        }
+      }
+
+      var syncArgs = [this].concat(cbArgs);
+      var asyncArgs = [this].concat(cbArgs).concat([decrementRemaining]);
+
+      for (var i=0; i<callbacks.length; i++) {
+        if (callbacks[i].length <= syncArgs.length) {
+          // sync callback
+          try {
+            callbacks[i].apply(window, syncArgs);
+          }
+          catch(err) {
+            console.error('unexpected error in a callback', err);
+          }
+          decrementRemaining();
+        }
+        else {
+          // async callback
+          try {
+            callbacks[i].apply(window, asyncArgs);
+          }
+          catch(err) {
+            console.error('unexpected error in callback', err);
+            decrementRemaining();
+          }
+        }
+      }
+    },
+
+    _willDeactivate: function() {
+
+      if (this.source) {
+        // willDeactivate for source + aliasRoutes
+        var callbacks = this._gatherCallbacks(this.source, 'willDeactivate');
+        this._processCallbacks(
+          callbacks,
+          [],
+          this._willDeactivateDone.bind(this)
+        );
+      }
+      else {
+        this._willDeactivateDone();
+      }
+    },
+
+    _willDeactivateDone: function() {
+      if (this.aborted) {
+        return;
+      }
+      this._willActivate();
+    },
+
+    _willActivate: function() {
+      if (this.aborted) {
+        return;
+      }
+      this._processCallbacks(
+        this._gatherCallbacks(this.destination, 'willActivate'),
+        this._getActivateCbArgs(),
+        this._willActivateDone.bind(this));
+    },
+
+    _willActivateDone: function() {
+      if (this.aborted) {
+        return;
+      }
+      this._deactivate();
+    },
+
+    _deactivate: function() {
+      if (this.aborted) {
+        return;
+      }
+      if (this.source) {
+        this._processCallbacks(
+          this._gatherCallbacks(this.source,  'deactivate'),
+          [],
+          this._deactivateDone.bind(this)
+        );
+      }
+      else
+        this._deactivateDone();
+    },
+
+    _deactivateDone: function() {
+      RouterState.setActiveRoute(null);
+      this._activate();
+    },
+
+    _getActivateCbArgs: function() {
+      return [
+        {routeParams: this._routeParams}
+      ];
+    },
+
+    _activate: function() {
+      this._processCallbacks(
+        this._gatherCallbacks(this.destination, 'activate'),
+        this._getActivateCbArgs(),
+        this._activateDone.bind(this));
+    },
+
+    _activateDone: function() {
+      if (this._updateLocationCb)
+        this._updateLocationCb(this.destination.getRoutePath(this._routeParams));
+      RouterState.setActiveRoute(this.destination);
+      this.aborted = true;  // ensure no other callbacks will run
+    },
+
+    _complete: function() {
+      RouterState.completeTransition(this);
+    }
+
+  }
+
+  function randomString(len, charSet) {
+    charSet = charSet || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var randomString = '';
+    for (var i = 0; i < len; i++) {
+        var randomPoz = Math.floor(Math.random() * charSet.length);
+        randomString += charSet.substring(randomPoz,randomPoz+1);
+    }
+    return randomString;
+  };
+
+  window.Polymer.RouteManager = RouteManager;
+  window.Polymer.RouteManagerTest = RouteManagerTest;
+  console.log("RouteManager ready");
+})();
+</script>

@@ -1,0 +1,155 @@
+<!doctype html>
+<!--
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<html>
+<head>
+
+  <title>elements test</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <script src="../../web-component-tester/browser.js"></script>
+
+  <link rel="import" href="../iron-router-config.html">
+  <link rel="import" href="../iron-route.html">
+  <link rel="import" href="../../test-fixture/test-fixture.html">
+</head>
+<body>
+
+  <iron-router-config id="config"
+    auto-start="true"
+    base-path="/foo/bar"
+    hash-prefix="#!"
+    alias-path-prefix="@-"
+    path-style="/"
+    token-prefix="TOKEN"
+    ></iron-router-config>
+
+  <test-fixture id="simple">
+    <template>
+      <iron-route id="simpleRoute" route="/foo/bar"
+      ></iron-route>
+    </template>
+  </test-fixture>
+
+  <test-fixture id="nested">
+    <template>
+      <iron-route id="simpleRoute" route="/foo"
+      >
+        <iron-route id="barRoute" route="/bar">
+        </iron-route>
+        <iron-route id="bazRoute" route="/baz">
+        </iron-route>
+      </iron-route>
+    </template>
+  </test-fixture>
+
+  <test-fixture id="attributes">
+    <template>
+      <iron-route id="r1" route="/:foo">
+        <iron-route id="r2" route="/bar">
+          <iron-route id="r3" route="/:baz">
+          </iron-route>
+        </iron-route>
+      </iron-route>
+    </template>
+  </test-fixture>
+  <script>
+    suite('iron-router-config', function() {
+
+
+      test('config', function() {
+        var t = Polymer.RouteManager.register('/abc');
+        assert.isTrue( t.startsWith('TOKEN'));
+      });
+    });
+
+    suite('iron-route', function() {
+
+      setup( function() {
+        Polymer.RouteManagerTest.reset();
+        Polymer.RouteManagerTest.updateStateCb = function(url) {
+          console.log('update state', url);
+        }
+      });
+
+      test('simple route', function() {
+        document.getElementById('simple').create();
+        var routeElement = document.getElementById('simpleRoute');
+        Polymer.RouteManager.transitionTo('/foo/bar');
+        assert.isTrue(routeElement.active);
+        document.getElementById('simple').restore();
+      });
+
+      test('nested-route', function() {
+        document.getElementById('nested').create();
+        var routeElement = document.getElementById('barRoute');
+        assert.equal('/foo/bar', routeElement.fullRoute);
+      });
+
+      test('nested-route, prevent activation', function() {
+        document.getElementById('nested').create();
+        var routeElement = document.getElementById('barRoute');
+        Polymer.RouteManager.transitionTo('/foo/bar');
+        assert.isTrue(routeElement.active);
+        // prevent activation
+        var bazElement = document.getElementById('bazRoute');
+        bazElement.addEventListener('iron-route-will-activate',
+          function(ev) {
+            ev.preventDefault();
+          }
+        );
+        Polymer.RouteManager.transitionTo('/foo/baz');
+        assert.isTrue(routeElement.active);
+        assert.notOk(bazElement.active);
+        document.getElementById('nested').restore();
+      });
+
+      test('nested-route, prevent deactivation', function() {
+        document.getElementById('nested').create();
+        var barElement = document.getElementById('barRoute');
+        Polymer.RouteManager.transitionTo('/foo/bar');
+        assert.isTrue(barElement.active);
+        // prevent activation
+        bazElement = document.getElementById('bazRoute');
+        barElement.addEventListener('iron-route-will-deactivate',
+          function(ev) {
+            ev.preventDefault();
+          }
+        );
+        Polymer.RouteManager.transitionTo('/foo/baz');
+        assert.isTrue(barElement.active);
+        assert.notOk(bazElement.active);
+        document.getElementById('nested').restore();
+      });
+
+      test('nested-route, attribute reflection', function() {
+        document.getElementById('attributes').create();
+        var r1 = document.getElementById('r1');
+        var r2 = document.getElementById('r2');
+        var r3 = document.getElementById('r3');
+        Polymer.RouteManager.transitionTo('/foo');
+        assert.equal(r1.foo, 'foo');
+        // parent reflection. given
+        Polymer.RouteManager.transitionTo('/a/bar/c');
+        assert.equal(r1.foo, 'a');
+        assert.equal(r3.baz, 'c');
+        assert.isUndefined(r3.foo);
+        document.getElementById('attributes').restore();
+      });
+
+    });
+
+
+  </script>
+
+</body>
+</html>

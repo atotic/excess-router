@@ -1,0 +1,31 @@
+{
+  "name": "maybe-router",
+  "version": "0.0.1",
+  "description": "maybe-router",
+  "homepage": "https://atotic.github.io/app-state",
+  "main": "maybe-router.html",
+  "authors": [
+    "Aleks Totic <a@totic.org>"
+  ],
+  "license": "Apache-2",
+  "ignore": [
+    "/.*",
+    "/test/",
+    "/demo/"
+  ],
+  "keywords": [
+    "web-component",
+    "web-components",
+    "polymer",
+    "router"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0"
+  },
+  "devDependencies": {
+    "web-component-tester": "*",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-pages": "PolymerElements/iron-pages#^1.0.0"
+  }
+}

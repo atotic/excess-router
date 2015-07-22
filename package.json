@@ -1,0 +1,10 @@
+{
+  "description": "Generates pathToRegexp.js",
+  "license": "BSD-3-Clause",
+  "scripts": {
+    "browserify": "browserify -r 'path-to-regexp' -s pathToRegexp > pathToRegexp.js"
+  },
+  "dependencies": {
+    "path-to-regexp": "~1.2.0"
+  }
+}
