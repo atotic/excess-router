@@ -30,6 +30,33 @@ Transition sequence:
         return array[i];
     }
   }
+  /** ES6 "".startsWith polyfill */
+
+  function StringStartsWith(str, search) {
+      if (str == null) {
+        throw TypeError();
+      }
+      if (search && toString.call(search) == '[object RegExp]') {
+        throw TypeError();
+      }
+      var stringLength = str.length;
+      var searchString = String(search);
+      var searchLength = searchString.length;
+      // `ToInteger`
+      var pos = 0;
+      var start = Math.min(Math.max(pos, 0), stringLength);
+      // Avoid the `indexOf` call if no match is possible
+      if (searchLength + start > stringLength) {
+        return false;
+      }
+      var index = -1;
+      while (++index < searchLength) {
+        if (str.charCodeAt(start + index) != searchString.charCodeAt(index)) {
+          return false;
+        }
+      }
+      return true;
+    };
   /**
   RouterState stores RouteManager configuration.
   It provides utility routines for state manipulation.
@@ -300,7 +327,7 @@ Transition sequence:
           RouterState[p] = options[p];
         }
       });
-      if (!RouterState.hashPrefix.startsWith('#')) {
+      if (!StringStartsWith(RouterState.hashPrefix,'#')) {
         throw new Error('hashPrefix must start with #');
       }
     },
@@ -378,11 +405,11 @@ Transition sequence:
         return null;
       }
       else if (RouterState.aliasPathPrefix &&
-        routeSpecifier.startsWith(RouterState.aliasPathPrefix)) {
+        StringStartsWith(routeSpecifier, RouterState.aliasPathPrefix)) {
         return 'alias';
       }
       else if (RouterState.tokenPrefix &&
-        routeSpecifier.startsWith(RouterState.tokenPrefix)) {
+        StringStartsWith(routeSpecifier, RouterState.tokenPrefix)) {
         return 'token';
       }
       else {
@@ -507,7 +534,7 @@ Transition sequence:
             if (ev.target.nodeName === 'A') {
               try {
                 var href = ev.target.getAttribute('href');
-                if (href.startsWith(RouterState.hashPrefix)) {
+                if (StringStartsWith(href,RouterState.hashPrefix)) {
                   href = href.replace(RouterState.hashPrefix, '');
                 }
                 if (href) {
@@ -607,7 +634,7 @@ Transition sequence:
     },
 
     _decodeAliasPath: function(path) {
-      if (path.startsWith(RouterState.aliasPathPrefix)) {
+      if (StringStartsWith(path, RouterState.aliasPathPrefix)) {
         return path.replace(RouterState.aliasPathPrefix, '');
       }
       else {

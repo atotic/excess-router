@@ -68,7 +68,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       test('config', function() {
         var t = Polymer.RouteManager.register('/abc');
-        assert.isTrue( t.startsWith('TOKEN'));
+        assert.ok( t.match(/TOKEN/));
       });
     });
 
