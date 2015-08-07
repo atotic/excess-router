@@ -62,14 +62,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </iron-route>
     </template>
   </test-fixture>
+
+  <test-fixture id="redirection">
+    <template>
+      <iron-route id="r1" route="/foo" route-alias="default"></iron-route>
+      <iron-route id="r2" route="/*" redirect-to="@default"></iron-route>
+    </template>
+  </test-fixture>
+
   <script>
     suite('iron-router-config', function() {
-
 
       test('config', function() {
         var t = Polymer.RouteManager.register('/abc');
         assert.ok( t.match(/TOKEN/));
       });
+
     });
 
     suite('iron-route', function() {
@@ -144,6 +152,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         assert.equal(r3.baz, 'c');
         assert.isUndefined(r3.foo);
         document.getElementById('attributes').restore();
+      });
+
+      test('redirect', function() {
+        document.getElementById('redirection').create();
+        var r1 = document.getElementById('r1');
+        var r2 = document.getElementById('r2');
+        Polymer.RouteManager.transitionTo('/notaroute');
+        // r2 redirected to r1
+        assert.isTrue(r1.active);
+
       });
 
     });

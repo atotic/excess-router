@@ -57,6 +57,7 @@ Transition sequence:
       }
       return true;
     };
+
   /**
   RouterState stores RouteManager configuration.
   It provides utility routines for state manipulation.
@@ -371,6 +372,12 @@ Transition sequence:
       return destination;
     },
 
+    _findRouteByAlias: function(alias) {
+      var compare = Route.compareByAlias(alias);
+      var destination = ArrayFind(RouterState.routes, compare);
+      return destination;
+    },
+
     _urlFromRoutePath: function(routePath) {
       if (RouterState.pathStyle === 'hash') {
         return RouterState.hashPrefix + routePath;
@@ -424,6 +431,11 @@ Transition sequence:
     getRouteKeys: function(routeSpecifier) {
       switch(this.getRouteType(routeSpecifier)) {
         case 'alias':
+          var r = this._findRouteByAlias(routeSpecifier);
+          if (!r) {
+            throw new Error("Route alias not registered");
+          }
+          return r.keys();
         case 'token':
           var r = this._findRouteByToken(routeSpecifier).resolveAlias();
           if (!r) {
@@ -471,6 +483,11 @@ Transition sequence:
     _findDestination: function(destination, routeParams) {
       switch( this.getRouteType(destination)) {
         case 'alias':
+          var route = this._findRouteByAlias(destination);
+           if (route) {
+            return { route: route, routeParams: routeParams }
+          }
+          return;
         case 'token':
           var route = this._findRouteByToken(destination).resolveAlias();
           if (route) {
@@ -666,9 +683,9 @@ Transition sequence:
     this.regexp = pathToRegexp(this.path, this.regexKeys,
       { sensitive: true, strict: true });
     this.pathGenerator = pathToRegexp.compile(this.path);
-    this.aliasRoutes = [];
+    this.aliasRoutes = [];  // routes that are aliased to this one
 
-    this.alias = options ? options.alias : undefined;
+    this.alias = options ? options.alias : undefined; //
     this.willDeactivate = options ? options.willDeactivate : undefined;
     this.deactivate = options ? options.deactivate : undefined;
     this.willActivate = options ? options.willActivate : undefined;
@@ -681,6 +698,16 @@ Transition sequence:
   Route.compareByToken = function(token) {
     return function(r) {
       return r.token === token;
+    }
+  }
+
+  Route.compareByAlias = function(alias) {
+    if (!StringStartsWith(alias, RouterState.aliasPathPrefix)) {
+      throw new Error("compareByAlias called without alias");
+    }
+    alias = alias.replace(RouterState.aliasPathPrefix, '');
+    return function(r) {
+      return r.alias === alias;
     }
   }
 
@@ -760,7 +787,7 @@ Transition sequence:
   }
 
   var AliasRoute = function(path, options) {
-    this.token = RouterState.aliasPathPrefix + randomString(6);
+    this.token = RouterState.tokenPrefix + randomString(6);
     this.alias = RouteManager._decodeAliasPath(path);
 
     this.willDeactivate = options ? options.willDeactivate : undefined;

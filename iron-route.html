@@ -18,6 +18,7 @@ The library can be configured with `iron-router-config` element.
 ```
   <template is="dom-bind">
     <iron-route route="/:topmenu" topmenu="{{selected}}"></iron-route>
+    <iron-route route="/*" redirect-to="/0"></iron-route>
     <iron-pages selected="{{selected}}">
       <div>Page 1</div>
       <div>Page 2</div>
@@ -27,6 +28,7 @@ The library can be configured with `iron-router-config` element.
 ```
 This example will bind currently selected page to the URL. Changing the URL
 will change the page, changing the page will change the URL.
+On startup, if no route matches, wildcard route will redirect to /0.
 
 ### Defining the route
 
@@ -224,6 +226,14 @@ Current URL `/users/1/review/5`
        * Route alias. If this route should have an alias, specify it here.
        */
       routeAlias: {
+        type: String,
+        value: ""
+      },
+
+      /**
+       * Route to redirect to. If set, route will redirect inside 'willActivate'
+       */
+      redirectTo: {
         type: String
       },
 
@@ -232,7 +242,7 @@ Current URL `/users/1/review/5`
        */
       fullRoute: {
         type: String,
-        computed: '_computeFullRoute(_givenRoute, _parentRoute)',
+        computed: '_computeFullRoute(_givenRoute, _parentRoute, routeAlias)',
         observer: '_fullRouteChanged',
         notify: true
       },
@@ -263,6 +273,7 @@ Current URL `/users/1/review/5`
         reflectToAttribute: true,
         readOnly: true
       }
+
     },
 
     /** EVENTS */
@@ -478,6 +489,18 @@ Current URL `/users/1/review/5`
     },
 
     _willActivate: function(transaction, activationParams) {
+      // redirected routes redirect on activation
+      if (this.redirectTo) {
+        if (this._redirecting) {
+          throw new Error("redirect loop detected", this.fullRoute);
+        }
+        this._redirecting = true;
+        transaction.abort( {
+          redirectTo: this.redirectTo
+        });
+        this._redirecting = false;
+        return;
+      }
       var ev = this.fire(
         'iron-route-will-activate',
         { transaction: transaction },
@@ -566,7 +589,7 @@ Current URL `/users/1/review/5`
           activate: this._boundActivate
         }
         if (this.routeAlias) {
-          options.alias = routeAlias;
+          options.alias = this.routeAlias;
         }
         this._routeToken = Polymer.RouteManager.register(newRoute, options);
       }
