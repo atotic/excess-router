@@ -46,9 +46,9 @@ Notes:
        * True if RouteManager starts on WebComponentsReady.
        * If false, you must call RouterManager.start manually
        */
-      autoStart: {
+      manualStart: {
         type: Boolean,
-        value: true
+        value: false
       },
       /**
        * base path for path-based routing. Use it if your app is not mounted at the root.
@@ -93,13 +93,13 @@ Notes:
     },
 
     observers: [
-      '_configurationChanged(anchorRouting, autoStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix)'
+      '_configurationChanged(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix)'
     ],
 
-    _configurationChanged: function(anchorRouting, autoStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix) {
+    _configurationChanged: function(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix) {
       Polymer.RouteManager.configure({
         anchorRouting: anchorRouting,
-        autoStart: autoStart,
+        autoStart: !manualStart,
         basePath: basePath,
         hashPrefix: hashPrefix,
         aliasPathPrefix: aliasPathPrefix,
