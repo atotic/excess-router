@@ -446,8 +446,7 @@ Current URL `/users/1/review/5`
 
     _monitorAttributes: function(attributes) {
        // console.log("monitoring", attributes);
-      for (var i=0; i<attributes.length; i++) {
-        var name = attributes[i];
+      var defProp = function(name) {
         Object.defineProperty(this, name, {
           configurable: true,
           enumerable: true,
@@ -466,6 +465,10 @@ Current URL `/users/1/review/5`
             }
           }
         });
+      }.bind(this);
+
+      for (var i=0; i<attributes.length; i++) {
+        defProp(attributes[i]);
       }
     },
 
@@ -534,7 +537,8 @@ Current URL `/users/1/review/5`
       this._setRouteParams(routeParams);
       try {
         this._blockParamNavigation = true;
-        for (var i=0, key = this._givenKeys[i]; i<this._givenKeys.length; i++) {
+        for (var i=0; i<this._givenKeys.length; i++) {
+          var key = this._givenKeys[i];
           if (key in routeParams) {
             this[key] = routeParams[key];
           }
