@@ -364,8 +364,8 @@ Current URL `/users/1/review/5`
     },
 
     _handleChildRouteAdded: function(ev) {
-      if (ev.srcElement !== this) {
-        // console.log('child-route-added', this.id, ev.srcElement.id , ev.srcElement.route);
+      if (ev.target !== this) {
+        // console.log('child-route-added', this.id, ev.target.id , ev.target.route);
         ev.stopPropagation();
         this._sendParentChangeToChild(ev.detail.child);
       }
