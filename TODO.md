@@ -3,7 +3,6 @@ TODO:
 - Parse query arguments
 
 ROADMAP:
-- redirectTo with followup: need use cases
 - saving state with optional router-state object
 
 PROBLEMS:

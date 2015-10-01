@@ -1,9 +1,9 @@
 {
-  "name": "maybe-router",
-  "version": "0.0.1",
-  "description": "maybe-router",
-  "homepage": "https://atotic.github.io/maybe-router",
-  "main": "maybe-router.html",
+  "name": "excess-router",
+  "version": "0.8.0",
+  "description": "Express-style routing for Polymer",
+  "homepage": "https://atotic.github.io/excess-router",
+  "main": "excess-router.html",
   "authors": [
     "Aleks Totic <a@totic.org>"
   ],
@@ -14,7 +14,6 @@
     "/demo/"
   ],
   "keywords": [
-    "web-component",
     "web-components",
     "polymer",
     "router"

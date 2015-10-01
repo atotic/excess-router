@@ -4,16 +4,6 @@
 (function() {
   'use strict';
 
-
-/** TECH NOTES
-Transition sequence:
-  willDeactivate, deactivate, willActivate, activate
-  I'd switch it to:
-  willDeactivate, willActivate, deactivate, activate
-  Because aborting transaction in willActivate leaves us without a route
- */
-
-
   function regexKeysToArray(regexKeys) {
     var keys = [];
     for (var i=0; i<regexKeys.length; i++) {
@@ -302,7 +292,7 @@ Transition sequence:
 
 ### Configuration:
 
-  @polymerBehavior Polymer.RouteManager
+  @polymerBehavior Excess.RouteManager
   */
   var RouteManager = {
 
@@ -1050,8 +1040,11 @@ Transition sequence:
     return randomString;
   };
 
-  window.Polymer.RouteManager = RouteManager;
-  window.Polymer.RouteManagerTest = RouteManagerTest;
+  if (!window.Excess)
+    window.Excess = {};
+
+  window.Excess.RouteManager = RouteManager;
+  window.Excess.RouteManagerTest = RouteManagerTest;
 
 })();
 </script>

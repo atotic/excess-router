@@ -8,30 +8,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 @license
 -->
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="iron-route-manager.html">
+<link rel="import" href="excess-route-manager.html">
 
 <script>
 
 /**
-`iron-router-config` configures Polymer.RoutingManager routing library
+`excess-router-config` configures Polymer.RoutingManager routing library
 
 Examples:
 
-    <just-router-config
+    <excess-router-config
       path-style="hash"
       hash-prefix="#!"
-    ></just-router-config>
+    ></excess-router-config>
 
-    <just-router-config
+    <excess-router-config
       path-style="path"
       base-prefix="/my"
-    ></just-router-config>
+    ></excess-router-config>
 
 Notes:
 */
   Polymer({
 
-    is: 'iron-router-config',
+    is: 'excess-router-config',
 
     properties: {
 
@@ -97,7 +97,7 @@ Notes:
     ],
 
     _configurationChanged: function(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix) {
-      Polymer.RouteManager.configure({
+      Excess.RouteManager.configure({
         anchorRouting: anchorRouting,
         autoStart: !manualStart,
         basePath: basePath,

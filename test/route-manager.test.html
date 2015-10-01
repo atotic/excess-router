@@ -18,7 +18,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
   <script src="../../web-component-tester/browser.js"></script>
 
-  <link rel="import" href="../iron-route-manager.html">
+  <link rel="import" href="../excess-route-manager.html">
 
 </head>
 <body>
@@ -27,14 +27,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     suite('route-manager', function() {
 
       setup( function() {
-        Polymer.RouteManagerTest.reset();
-        Polymer.RouteManagerTest.updateStateCb = function(url) {
+        Excess.RouteManagerTest.reset();
+        Excess.RouteManagerTest.updateStateCb = function(url) {
           console.log('update state', url);
         }
       });
 
       test('configure', function() {
-        Polymer.RouteManager.configure({
+        Excess.RouteManager.configure({
           autoStart: false,
           basePath: 'blah',
           hashPrefix: '#!',
@@ -44,48 +44,48 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       });
 
       test('register/unregister', function() {
-        var token = Polymer.RouteManager.register('/a/b/c');
-        Polymer.RouteManager.unregister(token);
+        var token = Excess.RouteManager.register('/a/b/c');
+        Excess.RouteManager.unregister(token);
       });
 
       test('register/unregister aliased', function() {
         var alias = 'foo';
-        var token = Polymer.RouteManager.register('/a/b/c', {
+        var token = Excess.RouteManager.register('/a/b/c', {
           alias: alias
         });
-        var namedToken = Polymer.RouteManager.register('@foo');
-        assert.equal(Polymer.RouteManagerTest.routeType(token), 'standard');
-        assert.equal(Polymer.RouteManagerTest.routeType(namedToken), 'alias');
-        Polymer.RouteManager.unregister(token);
+        var namedToken = Excess.RouteManager.register('@foo');
+        assert.equal(Excess.RouteManagerTest.routeType(token), 'standard');
+        assert.equal(Excess.RouteManagerTest.routeType(namedToken), 'alias');
+        Excess.RouteManager.unregister(token);
         // we have an orphan
-        assert.equal(Polymer.RouteManagerTest.routeType(namedToken), 'orphan');
-        token = Polymer.RouteManager.register('/a/b/c', {
+        assert.equal(Excess.RouteManagerTest.routeType(namedToken), 'orphan');
+        token = Excess.RouteManager.register('/a/b/c', {
           alias: alias
         });
         // orphan no nore
-        assert.equal(Polymer.RouteManagerTest.routeType(namedToken), 'alias');
-        Polymer.RouteManager.unregister(namedToken);
-        Polymer.RouteManager.unregister(token);
+        assert.equal(Excess.RouteManagerTest.routeType(namedToken), 'alias');
+        Excess.RouteManager.unregister(namedToken);
+        Excess.RouteManager.unregister(token);
       });
 
       test('transitionTo', function() {
         var t1calls = {}, t2calls = {};
-        var t1 = Polymer.RouteManager.register('/foo', {
+        var t1 = Excess.RouteManager.register('/foo', {
           willDeactivate: function() { t1calls.willDeactivate = true},
           deactivate: function() { t1calls.deactivate = true},
           willActivate: function() { t1calls.willActivate = true},
           activate: function() { t1calls.activate =  true}
         });
-        var t2 = Polymer.RouteManager.register('/bar', {
+        var t2 = Excess.RouteManager.register('/bar', {
           willDeactivate: function() { t2calls.willDeactivate = true},
           deactivate: function() { t2calls.deactivate = true},
           willActivate: function() { t2calls.willActivate = true},
           activate: function() { t2calls.activate =  true}
         });
-        Polymer.RouteManager.transitionTo(t1);
+        Excess.RouteManager.transitionTo(t1);
         assert.isTrue(t1calls.willActivate);
         assert.isTrue(t1calls.activate);
-        Polymer.RouteManager.transitionTo(t2);
+        Excess.RouteManager.transitionTo(t2);
         assert.isTrue(t1calls.willDeactivate);
         assert.isTrue(t1calls.deactivate);
         assert.isTrue(t2calls.willActivate);
@@ -94,22 +94,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       test('transitionTo async', function() {
         var t1calls = {}, t2calls = {};
-        var t1 = Polymer.RouteManager.register('/foo', {
+        var t1 = Excess.RouteManager.register('/foo', {
           willDeactivate: function(transition, done) { t1calls.willDeactivate = true; done()},
           deactivate: function(transition, done) { t1calls.deactivate = true; done()},
           willActivate: function(transition, params, done) { t1calls.willActivate = true; done()},
           activate: function(transition, params, done) { t1calls.activate =  true; done()}
         });
-        var t2 = Polymer.RouteManager.register('/bar', {
+        var t2 = Excess.RouteManager.register('/bar', {
           willDeactivate: function(transition, done) { t2calls.willDeactivate = true; done()},
           deactivate: function(transition, done) { t2calls.deactivate = true; done()},
           willActivate: function(transition, params, done) { t2calls.willActivate = true; done()},
           activate: function(transition, params, done) { t2calls.activate =  true; done()}
         });
-        Polymer.RouteManager.transitionTo(t1);
+        Excess.RouteManager.transitionTo(t1);
         assert.isTrue(t1calls.willActivate);
         assert.isTrue(t1calls.activate);
-        Polymer.RouteManager.transitionTo(t2);
+        Excess.RouteManager.transitionTo(t2);
         assert.isTrue(t1calls.willDeactivate);
         assert.isTrue(t1calls.deactivate);
         assert.isTrue(t2calls.willActivate);
@@ -118,20 +118,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       test('transitionTo alias route', function() {
         var t1calls = {}, t2calls = {};
-        var t1 = Polymer.RouteManager.register('/foo', {
+        var t1 = Excess.RouteManager.register('/foo', {
           alias: 'foo',
           willDeactivate: function(transition, done) { t1calls.willDeactivate = true; done()},
           deactivate: function(transition, done) { t1calls.deactivate = true; done()},
           willActivate: function(transition, params, done) { t1calls.willActivate = true; done()},
           activate: function(transition, params, done) { t1calls.activate =  true; done()}
         });
-        var t2 = Polymer.RouteManager.register('@foo', {
+        var t2 = Excess.RouteManager.register('@foo', {
           willDeactivate: function(transition, done) { t2calls.willDeactivate = true; done()},
           deactivate: function(transition, done) { t2calls.deactivate = true; done()},
           willActivate: function(transition, params, done) { t2calls.willActivate = true; done()},
           activate: function(transition, params, done) { t2calls.activate =  true; done()}
         });
-        Polymer.RouteManager.transitionTo(t2);
+        Excess.RouteManager.transitionTo(t2);
         assert.isTrue(t1calls.willActivate);
         assert.isTrue(t1calls.activate);
         assert.isTrue(t2calls.willActivate);
@@ -141,36 +141,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       test('getRoutePath', function() {
         var path = '/a/b/c';
 
-        var token = Polymer.RouteManager.register('/a/b/c');
-        var route = Polymer.RouteManagerTest.routeFromToken(token);
+        var token = Excess.RouteManager.register('/a/b/c');
+        var route = Excess.RouteManagerTest.routeFromToken(token);
         var url = route.getRoutePath();
         assert.equal(url, '/a/b/c');
-        var token = Polymer.RouteManager.register('/:foo/b/c');
-        var route = Polymer.RouteManagerTest.routeFromToken(token);
+        var token = Excess.RouteManager.register('/:foo/b/c');
+        var route = Excess.RouteManagerTest.routeFromToken(token);
         var url = route.getRoutePath({ foo: 'bar'});
         assert.equal(url, '/bar/b/c');
       });
 
       test('_urlFromRoutePath', function() {
-        Polymer.RouteManager.configure({
+        Excess.RouteManager.configure({
           basePath: '/foo',
           hashPrefix: '#!',
           pathStyle: 'path'
         });
-        var p = Polymer.RouteManager._urlFromRoutePath('/bar');
+        var p = Excess.RouteManager._urlFromRoutePath('/bar');
         assert.equal(p, '/foo/bar');
-        Polymer.RouteManager.configure({
+        Excess.RouteManager.configure({
           basePath: '/foo',
           hashPrefix: '#!',
           pathStyle: 'hash'
         });
-        p = Polymer.RouteManager._urlFromRoutePath('/bar');
+        p = Excess.RouteManager._urlFromRoutePath('/bar');
         assert.equal(p, '#!/bar');
       });
 
       test('_matchToRouteParams', function() {
-        var t = Polymer.RouteManager.register('/foo/:bar/:baz');
-        var route = Polymer.RouteManagerTest.routeFromToken(t);
+        var t = Excess.RouteManager.register('/foo/:bar/:baz');
+        var route = Excess.RouteManagerTest.routeFromToken(t);
         var match = route.regexp.exec('/foo/bar/baz');
         var routeParams = route._matchToRouteParams(match);
         assert.equal(routeParams.bar, 'bar');
@@ -178,43 +178,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       });
 
       test('_setRouteFromLocation', function() {
-        Polymer.RouteManager.configure({
+        Excess.RouteManager.configure({
           pathStyle: 'path'
         });
         var t1calls = {}, t2calls = {};
-        var t1 = Polymer.RouteManager.register('/foo', {
+        var t1 = Excess.RouteManager.register('/foo', {
           willDeactivate: function() { t1calls.willDeactivate = true},
           deactivate: function() { t1calls.deactivate = true},
           willActivate: function() { t1calls.willActivate = true},
           activate: function() { t1calls.activate =  true}
         });
         window.history.replaceState(null, "", '/foo');
-        Polymer.RouteManager._setRouteFromLocation();
+        Excess.RouteManager._setRouteFromLocation();
         assert.isTrue(t1calls.activate);
-        var t2 = Polymer.RouteManager.register('/bar', {
+        var t2 = Excess.RouteManager.register('/bar', {
           willDeactivate: function(transition, done) { t2calls.willDeactivate = true; done()},
           deactivate: function(transition, done) { t2calls.deactivate = true; done()},
           willActivate: function(transition, params, done) { t2calls.willActivate = true; done()},
           activate: function(transition, params, done) { t2calls.activate =  true; done()}
         });
         window.history.replaceState(null, "", '/bar');
-        Polymer.RouteManager._setRouteFromLocation();
+        Excess.RouteManager._setRouteFromLocation();
         assert.isTrue(t1calls.deactivate);
         assert.isTrue(t2calls.activate);
       });
 
       test('transitionRedirect', function() {
         var t1calls = {}, t2calls = {}, t3calls = {};
-        var t1 = Polymer.RouteManager.register('/foo', {
+        var t1 = Excess.RouteManager.register('/foo', {
           willDeactivate: function() { t1calls.willDeactivate = true},
           deactivate: function() { t1calls.deactivate = true},
           willActivate: function() { t1calls.willActivate = true},
           activate: function() { t1calls.activate =  true}
         });
-        var t2 = Polymer.RouteManager.register('/bar/:baz', {
+        var t2 = Excess.RouteManager.register('/bar/:baz', {
            activate: function(transition, params) {t2calls.routeParams = params.routeParams;}
         });
-        var t3 = Polymer.RouteManager.register('/bar', {
+        var t3 = Excess.RouteManager.register('/bar', {
           willActivate: function(transition, params) {
             t3calls.willActivate = true;
             transition.abort({
@@ -224,9 +224,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
         });
         window.history.replaceState(null, "", '/foo');
-        Polymer.RouteManager._setRouteFromLocation();
+        Excess.RouteManager._setRouteFromLocation();
         // now t1 is active
-        Polymer.RouteManager.transitionTo(t3);
+        Excess.RouteManager.transitionTo(t3);
         // t2 will redirect to t3
         assert.equal("BAZ", t2calls.routeParams.baz);
 

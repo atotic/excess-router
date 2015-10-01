@@ -5,15 +5,15 @@
 
   <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
 
-  <link rel="import" href="../iron-route.html">
-  <link rel="import" href="../iron-router-config.html">
+  <link rel="import" href="../excess-route.html">
+  <link rel="import" href="../excess-router-config.html">
 
   <link rel="import" href="../../iron-selector/iron-selector.html">
   <link rel="import" href="../../iron-pages/iron-pages.html">
 </head>
 <body>
   <style>
-    iron-route[active] {
+    excess-route[active] {
       background-color: #AAA;
     }
     .iron-selected {
@@ -23,23 +23,22 @@
       margin: 4px;
     }
   </style>
-  <iron-router-config></iron-router-config>
+  <excess-router-config></excess-router-config>
   <template is="dom-bind" id="t1">
     <h3><a href="" target="_top">View</a> this demo in top window to view URL changes</h3>
-    <iron-route route="/abc/:selected"
-      selected="{{selected}}">
-      I am an /abc/:selected route that ties {{selected}} with the URL
-    </iron-route>
     <hr>
-      <p> {{Selected}} is <span>{{selected}}</span></p>
+      <p> template.selected is <span>{{selected}}</span></p>
     <hr>
-    <p>Anchor navigation
+    <p>Try anchor navigation
     <a href="#/abc/0">/abc/0</a>
     <a href="#/abc/1">/abc/1</a>
     <a href="#/abc/2">/abc/2</a>
     </p>
-
     <hr>
+    <!--  This route ties {{selected}} with the URL -->
+    <excess-route route="/abc/:selected"
+      selected="{{selected}}"></excess-route>
+
     <p>iron-selector</p>
     <iron-selector selected="{{selected}}">
       <div>A</div>
@@ -56,7 +55,12 @@
     </iron-pages>
 
     <hr>
-    <iron-route route="/(.*)">I am a .* route that matches everything</iron-route>
+
+    <p>To set up a default application route, use a "match everything" route that redirects to the default.
+    <pre>
+    &lt;excess-route route="/(.*)" redirect-to="/abc/0"> &lt;/excess-route>
+    </pre>
+    <excess-route route="/(.*)" redirect-to="/abc/0"></excess-route>
 
 
   </template>
