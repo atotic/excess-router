@@ -89,9 +89,9 @@ How would you use this in Polymer Starter Kit?
 
 ```html
 <my-app>
-  <iron-route route="/:topmenu/:submenu"
-    topmenu="{{appRoute}}" submenu="{{submenu}}"></iron-route>
-  <iron-route route="/(.*)" redirect-to="/home"></iron-route>
+  <excess-route route="/:topmenu/:submenu"
+    topmenu="{{appRoute}}" submenu="{{submenu}}"></excess-route>
+  <excess-route route="/(.*)" redirect-to="/home"></excess-route>
   <paper-menu attr-for-selected="route" selected="{{appRoute}}">
     <a href="#/home" route="home">Home</a>
     <a href="#/users/all" route="users">Users</a>
