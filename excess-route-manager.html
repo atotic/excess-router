@@ -20,33 +20,43 @@
         return array[i];
     }
   }
-  /** ES6 "".startsWith polyfill */
 
+  /** ES6 "".startsWith polyfill */
   function StringStartsWith(str, search) {
-      if (str == null) {
-        throw TypeError();
-      }
-      if (search && toString.call(search) == '[object RegExp]') {
-        throw TypeError();
-      }
-      var stringLength = str.length;
-      var searchString = String(search);
-      var searchLength = searchString.length;
-      // `ToInteger`
-      var pos = 0;
-      var start = Math.min(Math.max(pos, 0), stringLength);
-      // Avoid the `indexOf` call if no match is possible
-      if (searchLength + start > stringLength) {
+    if (str == null) {
+      throw TypeError();
+    }
+    if (search && toString.call(search) == '[object RegExp]') {
+      throw TypeError();
+    }
+    var stringLength = str.length;
+    var searchString = String(search);
+    var searchLength = searchString.length;
+    // `ToInteger`
+    var pos = 0;
+    var start = Math.min(Math.max(pos, 0), stringLength);
+    // Avoid the `indexOf` call if no match is possible
+    if (searchLength + start > stringLength) {
+      return false;
+    }
+    var index = -1;
+    while (++index < searchLength) {
+      if (str.charCodeAt(start + index) != searchString.charCodeAt(index)) {
         return false;
       }
-      var index = -1;
-      while (++index < searchLength) {
-        if (str.charCodeAt(start + index) != searchString.charCodeAt(index)) {
-          return false;
-        }
-      }
-      return true;
-    };
+    }
+    return true;
+  };
+
+  function randomString(len, charSet) {
+    charSet = charSet || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var randomString = '';
+    for (var i = 0; i < len; i++) {
+        var randomPoz = Math.floor(Math.random() * charSet.length);
+        randomString += charSet.substring(randomPoz,randomPoz+1);
+    }
+    return randomString;
+  };
 
   /**
   RouterState stores RouteManager configuration.
@@ -272,7 +282,7 @@
 /**
   RouteManager is a routing library.
 
-  ### Features:
+### Features:
   - Express-style path matching
     '/foo/:bar/:baz', '/foo/*'
   - '/' or '#!' paths
@@ -292,13 +302,37 @@
 
 ### Configuration:
 
+- `anchorRouting: true`. If true, will trap anchor clicks and attempt to route them.
+- `autoStart: true`. If true, will start routing on WebComponentsReady. If your
+routes are not ready by then, set to false, and call RouteManager.start() when ready.
+- `basePath: ''`. base path for path style routing. Set to your app's root path.
+- `hashPrefix: '#'`. Prefix for hash paths. You might also like '#!'
+- `aliasPathPrefix: '@'`. Routes starting with aliasPathPrefix will be interpreted as aliases
+- `pathStyle: 'hash'`. Are your paths hashes, or real paths? 'hash'|'path'
+- `tokenPrefix: 'toke-'`. Routes starting with token prefix are tokens. You can ignore this
+setting unless you get conflicts
+
+### Tips:
+
+- To redirect a route
+  - Register the route
+  - Inside routes's activate handler, abort the transition with 'redirectTo' path
+
+- Debugging
+  - print all paths with `Excess.RouteManagerTest.print()`
+
+- 'no routes matched' error on startup
+  - if you see this error on startup, your routes might be registering too late. Set `autoStart` to false,'
+    and start your router manually with `Excess.RouteManager.start()`
+
   @polymerBehavior Excess.RouteManager
   */
   var RouteManager = {
 
     /**
      * @param {object} options --
-     * @param {string} options.autoStart -- start on WebComponentsReady
+     * @param {boolean} options.anchorRouting -- true if anchor clicks should be intercepted
+     * @param {string} options.autoStart -- automatically start on WebComponentsReady
      * @param {string} options.pathStyle -- hash/path
      * @param {string} options.basePath -- base path for path routing
      * @param {string} options.hashPrefix -- hash prefix: default '#', set '#!' if you need it
@@ -329,7 +363,9 @@
      * @param {string} path -- Path string
      * @param {object} options --
      * @param {string} options.alias -- route alias
-     * @param {boolean} options.isAliasRoute -- true if this is a aliasd route
+     * @param {boolean} options.isAliasRoute -- true if this is a aliased route
+     * @param {boolean} option.activateExclusive -- true if this route can only be activated on its own
+     * @param {boolean} option.activateStopPropagation -- true if no routes will match after this one
      * @return {string}} -- token, you need this to unregister
      */
     register: function(path, options) {
@@ -558,6 +594,10 @@
       }
     },
 
+    /**
+     * Starts routing. Gets called automatically on WebComponentsReady unless autoStart is false,
+     * Then you have to call it manually when your routes are ready.
+     */
     start: function() {
       if (this._started) {
         console.warn('RouteManager.start called more than once');
@@ -837,8 +877,8 @@
    */
 
   /**
-   * @param {Route} source -- source route
-   * @param {Route} destination -- destination route
+   * @param {Route} sources -- source routes
+   * @param {Route} destination -- destination routes
    * @param {function} updateLocationCb --
    */
   var Transition = function(source, destination, options) {
@@ -1030,15 +1070,6 @@
 
   }
 
-  function randomString(len, charSet) {
-    charSet = charSet || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var randomString = '';
-    for (var i = 0; i < len; i++) {
-        var randomPoz = Math.floor(Math.random() * charSet.length);
-        randomString += charSet.substring(randomPoz,randomPoz+1);
-    }
-    return randomString;
-  };
 
   if (!window.Excess)
     window.Excess = {};

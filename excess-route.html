@@ -116,13 +116,6 @@ How would you use this in Polymer Starter Kit?
 </my-app>
 ```
 
-## Philosophy
-
-## Experimental features
-
-Intially, `<excess-route>`s could be nested. It more than doubled the code size, and I could not come up with a good use case. I've decided
-that what I really want is nesting built into the core library.
-
 @demo
 -->
 <dom-module id="excess-route">
@@ -150,7 +143,7 @@ that what I really want is nesting built into the core library.
     properties: {
 
       /**
-       * true if route is active
+       * True when route is active
        */
       active: {
         type: Boolean,
@@ -160,13 +153,16 @@ that what I really want is nesting built into the core library.
       },
 
       /**
-       * true if child route is active
+       * Flags modifying how route will be activated
+       * - 's' for stop. No routes will be matched after if this route activates
+       * - 'x' for eXclusive. Route will only match if no other routes have already matched. Implies 's' flag.
+       * These flags are intended to be used with wildcard and redirect routes.
+       * Redirect routes should be exclusive,
        */
-      // childActive: {
-      //   type: Boolean,
-      //   notify: true,
-      //   readOnly: true
-      // },
+      activationModifiers: {
+        type: String,
+        value: ''
+      },
 
       /**
        * If route is active, routeParams are matching route parameters.
@@ -208,45 +204,11 @@ that what I really want is nesting built into the core library.
         type: String
       },
 
-      /**
-       * Full path to the route (parent + given)
-       */
-      fullRoute: {
-        type: String,
-        computed: '_computeFullRoute(_givenRoute, _parentRoute, routeAlias)',
-        observer: '_fullRouteChanged',
-        notify: true
-      },
-
-      /**
-       * User-specified route
-       */
-      _givenRoute: {
-        type: String
-      },
-
-      /**
-       * Parent route
-       */
-      _parentRoute: {
-        type: String,
-        value: ''
-      },
-
-      /**
-       * nestedChildRoute property is a marker attribute.
-       * It is always true, and exists for parents to
-       * find children using css attribute selectors.
-       */
-      // nestedChildRoute: {
-      //   type: Boolean,
-      //   value: true,
-      //   reflectToAttribute: true,
-      //   readOnly: true
-      // }
-
     },
 
+    observers: [
+      '_routingInformationChanged(route, routeAlias, activationModifiers)'
+    ],
     /** EVENTS */
 
     /**
@@ -263,57 +225,11 @@ that what I really want is nesting built into the core library.
      * @param {object} detail.activationParams
      */
 
-    /**
-     * Fired by child when attached to dom.
-     * Parent responds with excess-router-parent-route-changed event
-     *
-     * @param {Object} detail
-     * @param {Element} detail.child element firing the event, used to cross shadowDom boundary
-     * @-event excess-router-child-route-added
-     */
-
-    /**
-     * Fired by parent to immediate children when full parent's full route changes
-     *
-     * @param {Object} detail
-     * @param {Element} detail.parent element firing the event
-     * @param {String} route full parent route
-     * @-event excess-router-parent-route-changed
-     */
-
-    /**
-     * Fired by child route when activated.
-     *
-     * @param {Object} detail
-     * @param {object} detail.activationParams -- params that belong to parent
-     * @-event excess-router-child-route-activated
-     */
-
-    /**
-     * Fired by child route when deactivated.
-     *
-     * @-event excess-router-child-route-deactivated
-     */
-
-    // listeners: {
-    //   'excess-router-child-route-added': '_handleChildRouteAdded',
-    //   'excess-router-parent-route-changed': '_handleParentRouteChanged',
-    //   'excess-router-child-route-activated': '_handleChildRouteActivated',
-    //   'excess-router-child-route-deactivated': '_handleChildRouteDeactivated'
-    // },
-
     created: function() {
       this._boundWillDeactivate = this._willDeactivate.bind(this);
       this._boundDeactivate = this._deactivate.bind(this);
       this._boundWillActivate = this._willActivate.bind(this);
       this._boundActivate = this._activate.bind(this);
-    },
-
-    attached: function() {
-      // this.fire(
-      //   'excess-router-child-route-added',
-      //   { child: this }
-      // );
     },
 
     /**
@@ -334,87 +250,9 @@ that what I really want is nesting built into the core library.
       Excess.RouteManager.replaceWith(this._routeToken, routeParams);
     },
 
-    // _handleChildRouteAdded: function(ev) {
-      // if (ev.target !== this) {
-      //   // console.log('child-route-added', this.id, ev.target.id , ev.target.route);
-      //   ev.stopPropagation();
-      //   this._sendParentChangeToChild(ev.detail.child);
-      // }
-    // },
-
-    // _handleParentRouteChanged: function(ev) {
-      // // console.log('parent-route-changed', this.id, ev.detail.route, ev.detail.parent.id);
-      // this._parentRoute = ev.detail.route;
-      // this._parentRouteNode = ev.detail.parent;
-      // ev.stopPropagation();
-    // },
-
-    // _handleChildRouteActivated: function(ev) {
-      // this._setChildActive(true);
-      // this._setAndReflectRouteParams(ev.detail.activationParams.routeParams);
-      // this._fireChildActivated(ev.detail.activationParams);
-      // ev.stopPropagation();
-    // },
-
-    // _handleChildRouteDeactivated: function() {
-      // this._setChildActive(false);
-    // },
-
-    // _fireChildActivated: function(activationParams) {
-      // if (!this._parentRouteNode) {
-      //   return;
-      // }
-      // var parentParams = { routeParams: {}};
-      // if (activationParams.routeParams) {
-      //   // copy only keys not associated with current givenRoute
-      //   for (var p in activationParams.routeParams) {
-      //     if (this._givenKeys.indexOf(p) === -1) {
-      //       parentParams.routeParams[p] = activationParams.routeParams[p];
-      //     }
-      //   }
-      // }
-      // this.fire('excess-router-child-route-activated',
-      //   {
-      //     activationParams: parentParams
-      //   },
-      //   {
-      //     node: this._parentRouteNode,
-      //     bubbles: false
-      //   }
-      // );
-    // },
-
-    // _sendParentChangeToChild: function(child) {
-      // var ev = new CustomEvent('excess-router-parent-route-changed',
-      //   {
-      //     detail: {
-      //       parent: this,
-      //       route: this.fullRoute
-      //     }
-      //   });
-      // // console.log('dispatching to', child.id);
-      // child.dispatchEvent(ev);
-    // },
-
-    // _broadcastPathChangeToChildren: function() {
-      // var childRoutes = this.querySelectorAll('[nested-child-route]');
-      // childRoutes = Array.prototype.slice.call(childRoutes);
-
-      // function removeChildrenOf(el) {
-      //   var kids = el.querySelectorAll('[nested-child-route]');
-      //   kids = Array.prototype.slice.call(kids);
-      //   childRoutes = childRoutes.filter( function(element) {
-      //     return kids.indexOf(element) === -1;
-      //   });
-      // };
-
-      // for (var i=0; i<childRoutes.length; i++) {
-      //   this._sendParentChangeToChild(childRoutes[i]);
-      //   // do not propagate to children of route we've just notified
-      //   removeChildrenOf(childRoutes[i]);
-      // }
-    // },
-
+    /**
+     * adds get/set methods for all attributes
+     */
     _monitorAttributes: function(attributes) {
        // console.log("monitoring", attributes);
       var defProp = function(name) {
@@ -431,7 +269,7 @@ that what I really want is nesting built into the core library.
             // console.log('set ', name, val);
             this[ATTR_PREFIX + name] = val;
             this.fire(name + '-changed');
-            if (!this._blockParamNavigation && (this.active || this.childActive)) {
+            if (!this._blockParamNavigation && this.active) {
               this.debounce('paramNavigation', this._navigateToAttributes);
             }
           }
@@ -443,6 +281,9 @@ that what I really want is nesting built into the core library.
       }
     },
 
+    /**
+     * Reverse _monitorAttributes
+     */
     _stopMonitoringAttributes: function(attributes) {
       // console.log("stop monitoring", attributes);
       for (var i=0; i<attributes.length; i++) {
@@ -466,7 +307,7 @@ that what I really want is nesting built into the core library.
       // redirected routes redirect on activation
       if (this.redirectTo) {
         if (this._redirecting) {
-          throw new Error("redirect loop detected", this.fullRoute);
+          throw new Error("redirect loop detected", this.route);
         }
         this._redirecting = true;
         transaction.abort( {
@@ -489,27 +330,20 @@ that what I really want is nesting built into the core library.
       // console.log("Inactive ", this.route);
       this._setRouteParams(null);
       this._setActive(false);
-      if (this._parentRouteNode) {
-        this.fire(
-          'excess-router-child-route-deactivated',
-          { node: this._parentRouteNode }
-        );
-      }
     },
 
     _activate: function(transaction, activationParams) {
       // console.log("Active ", this.route);
       this._setAndReflectRouteParams(activationParams.routeParams);
       this._setActive(true);
-      // this._fireChildActivated(activationParams);
     },
 
     _setAndReflectRouteParams: function(routeParams) {
       this._setRouteParams(routeParams);
       try {
         this._blockParamNavigation = true;
-        for (var i=0; i<this._givenKeys.length; i++) {
-          var key = this._givenKeys[i];
+        for (var i=0; i<this._routeKeys.length; i++) {
+          var key = this._routeKeys[i];
           if (key in routeParams) {
             this[key] = routeParams[key];
           }
@@ -531,32 +365,27 @@ that what I really want is nesting built into the core library.
       for (var p in this.routeParams) {
         routeParams[p] = this.routeParams[p];
       }
-      for (var i=0, key=this._givenKeys[i]; i<this._givenKeys.length; i++) {
+      for (var i=0, key=this._routeKeys[i]; i<this._routeKeys.length; i++) {
         routeParams[key] = this[key];
       }
       this.transitionTo(routeParams);
     },
 
-    _routeChanged: function(newRoute) {
-      if (this._givenKeys) {
+    _routeChanged: function(newRoute, oldRoute) {
+      if (this._routeKeys) {
         this._stopMonitoringAttributes(
-          Excess.RouteManager.getRouteKeys(this._givenRoute));
+          Excess.RouteManager.getRouteKeys(this.oldRoute));
       }
-      this._givenRoute = newRoute;
-      this._givenKeys = Excess.RouteManager.getRouteKeys(this._givenRoute);
-      this._monitorAttributes(this._givenKeys);
+      this._routeKeys = Excess.RouteManager.getRouteKeys(newRoute);
+      this._monitorAttributes(this._routeKeys);
     },
 
-    _computeFullRoute: function() {
-      return Excess.RouteManager.concatPaths(this._parentRoute, this._givenRoute);
-    },
-
-    _fullRouteChanged: function(newRoute) {
+    _routingInformationChanged: function(route) {
       if (this._routeToken) {
         Excess.RouteManager.unregister(this._routeToken);
         this._routeToken = null;
       }
-      if (newRoute) {
+      if (route) {
         var options = {
           willDeactivate: this._boundWillDeactivate,
           deactivate: this._boundDeactivate,
@@ -566,10 +395,13 @@ that what I really want is nesting built into the core library.
         if (this.routeAlias) {
           options.alias = this.routeAlias;
         }
-        this._routeToken = Excess.RouteManager.register(newRoute, options);
+        if (this.activationModifiers) {
+          options.activateExclusive = this.activationModifiers.indexOf('s') != -1;
+          options.activateStopPropagation = this.activationModifiers.indexOf('x') != -1;
+        }
+        this._routeToken = Excess.RouteManager.register(route, options);
       }
-      // this._broadcastPathChangeToChildren();
-    }
+    },
 
   });
 

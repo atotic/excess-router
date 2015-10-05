@@ -1,9 +1,11 @@
 TODO:
-- users demo
-- Parse query arguments
+- allow multiple routes to be active at once
+
+- routeActivation:
+  single (default for
+  multiple (default)
 
 ROADMAP:
-- saving state with optional router-state object
 
 PROBLEMS:
 - named routes and nesting. Parent can't be a named route

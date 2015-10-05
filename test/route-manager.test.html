@@ -231,6 +231,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         assert.equal("BAZ", t2calls.routeParams.baz);
 
       });
+
+      test('multiple route match', function() {
+        var t1calls = {}, t2calls = {}, t3calls = {};
+        var t1 = Excess.RouteManager.register('/:topmenu/:submenu?', {
+          activate: function() { t1calls.activate = true}
+        });
+        var t2 = Excess.RouteManager.register('/users', {
+          activate: function() { t2calls.activate = true}
+        });
+        var t3 = Excess.RouteManager.register('/users/:userId', {
+          activate: function() { t3calls.activate = true}
+        });
+        window.history.replaceState(null, "", '/users');
+        assert.ok(t1calls.activate);
+        assert.ok(t3calls.activate);
+        assert.notOk(t3calls.activate);
+        window.history.replaceState(null, "", '/users/123');
+        assert.ok(t3calls.activate);
+      });
+
     });
 
 
