@@ -95,10 +95,14 @@ How would you use this in Polymer Starter Kit?
 ```html
     <my-app>
       <!-- this route routes the main menu -->
-      <excess-route route="/:mainmenu/(.*)"
+      <excess-route
+        route="/:mainmenu/(.*)"
         mainmenu="{{appRoute}}"></excess-route>
       <!-- this wildcard route will redirect to default route if no other routes match-->
-      <excess-route route="/(.*)" redirect-to="/home" activation-modifiers="x"></excess-route>
+      <excess-route
+        route="/(.*)"
+        redirect-to="/home"
+        activation-modifiers="x"></excess-route>
       <paper-menu attr-for-selected="route" selected="{{appRoute}}">
         <a href="#/home" route="home">Home</a>
         <a href="#/users/all" route="users">Users</a>
@@ -108,7 +112,10 @@ How would you use this in Polymer Starter Kit?
         <section route="home">...</section>
         <section route="users">
           <!-- this route manages /users subtree -->
-          <excess-route route="/users/:userId" user-id="{{userId}}" active="{{hasUserId}}"></excess-route>
+          <excess-route
+            route="/users/:userId"
+            user-id="{{userId}}"
+            active="{{hasUserId}}"></excess-route>
           <template is="dom-if" if="{{!hasUserId}}">
             <!-- if user id is not specified, show a list of users -->
             <section user="all">
