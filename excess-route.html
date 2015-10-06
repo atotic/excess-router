@@ -418,8 +418,9 @@ How would you use this in Polymer Starter Kit?
           options.alias = this.routeAlias;
         }
         if (this.activationModifiers) {
-          options.activateExclusive = this.activationModifiers.indexOf('s') != -1;
-          options.activateStopPropagation = this.activationModifiers.indexOf('x') != -1;
+          var mods = this.activationModifiers.toLowerCase();
+          options.activateExclusive = mods.indexOf('x') != -1;
+          options.activateStopPropagation = mods.indexOf('s') != -1;
         }
         this._routeToken = Excess.RouteManager.register(route, options);
       }

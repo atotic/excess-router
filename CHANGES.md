@@ -1,3 +1,7 @@
+0.9.1
+==================
+* bugfix: activationModifiers were swapped in excess-route
+
 0.9.0
 ==================
 
