@@ -7,7 +7,7 @@
   "authors": [
     "Aleks Totic <a@totic.org>"
   ],
-  "license": "Apache-2",
+  "license": "MIT",
   "ignore": [
     "/.*",
     "/test/",

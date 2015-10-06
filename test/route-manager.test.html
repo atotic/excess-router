@@ -204,6 +204,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       });
 
       test('transitionRedirect', function() {
+        Excess.RouteManager.configure({
+          pathStyle: 'path'
+        });
         var t1calls = {}, t2calls = {}, t3calls = {};
         var t1 = Excess.RouteManager.register('/foo', {
           willDeactivate: function() { t1calls.willDeactivate = true},
@@ -227,12 +230,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         Excess.RouteManager._setRouteFromLocation();
         // now t1 is active
         Excess.RouteManager.transitionTo(t3);
-        // t2 will redirect to t3
+        // t3 will redirect to t2
         assert.equal("BAZ", t2calls.routeParams.baz);
 
       });
 
       test('multiple route match', function() {
+        Excess.RouteManager.configure({
+          pathStyle: 'path'
+        });
         var t1calls = {}, t2calls = {}, t3calls = {};
         var t1 = Excess.RouteManager.register('/:topmenu/:submenu?', {
           activate: function() { t1calls.activate = true}
@@ -244,11 +250,60 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           activate: function() { t3calls.activate = true}
         });
         window.history.replaceState(null, "", '/users');
+        Excess.RouteManager._setRouteFromLocation();
         assert.ok(t1calls.activate);
-        assert.ok(t3calls.activate);
+        assert.ok(t2calls.activate);
         assert.notOk(t3calls.activate);
         window.history.replaceState(null, "", '/users/123');
+        Excess.RouteManager._setRouteFromLocation();
         assert.ok(t3calls.activate);
+      });
+
+      test('multiple route, activate exclusive', function() {
+        Excess.RouteManager.configure({
+          pathStyle: 'path'
+        });
+        var t1calls = {}, t2calls = {}, t3calls = {};
+        var t1 = Excess.RouteManager.register('/:topmenu', {
+          activate: function() { t1calls.activate = true}
+        });
+        var t2 = Excess.RouteManager.register('/(.*)', {
+          activate: function() { t2calls.activate = true}
+        });
+        window.history.replaceState(null, "", '/users');
+        Excess.RouteManager._setRouteFromLocation();
+        assert.ok(t1calls.activate);
+        assert.ok(t2calls.activate);
+
+        // now try the same with activateExclusive flag
+        Excess.RouteManager.unregister(t2);
+        t2calls.activate = false;
+        t2 = Excess.RouteManager.register('/(.*)', {
+          activate: function() { t2calls.activate = true},
+          activateExclusive: true
+        });
+        window.history.replaceState(null, "", '/users');
+        Excess.RouteManager._setRouteFromLocation();
+        assert.ok(t1calls.activate);
+        assert.notOk(t2calls.activate);
+      });
+
+      test('multiple route, activate stopPropagation', function() {
+        Excess.RouteManager.configure({
+          pathStyle: 'path'
+        });
+        var t1calls = {}, t2calls = {}, t3calls = {};
+        var t1 = Excess.RouteManager.register('/:topmenu', {
+          activate: function() { t1calls.activate = true},
+          activateStopPropagation: true
+        });
+        var t2 = Excess.RouteManager.register('/(.*)', {
+          activate: function() { t2calls.activate = true}
+        });
+        window.history.replaceState(null, "", '/users');
+        Excess.RouteManager._setRouteFromLocation();
+        assert.ok(t1calls.activate);
+        assert.notOk(t2calls.activate);
       });
 
     });

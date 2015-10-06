@@ -76,8 +76,8 @@
     // registered routes alias map --  Map(alias->Route)
     routesByAlias: {},
 
-    // active route
-    activeRoute: null,
+    // active routes
+    activeRoutes: [],
 
     // current transition
     activeTransition: null,
@@ -138,9 +138,10 @@
     removeRoute: function(route) {
       var idx = this.routes.indexOf(route);
 
-      if (this.activeRoute === route) {
+      var activeIdx = this.activeRoutes ? this.activeRoutes.indexOf(route) : -1;
+      if (activeIdx != -1) {
         console.warn('removing currently active route');
-        this.setActiveRoute(null);
+        this.activeRoutes.splice(activeIdx, 1);
         RouteManager._setRouteFromLocation();
       }
       var route = this.routes[idx];
@@ -221,8 +222,8 @@
         this.activeTransition = null;
     },
 
-    setActiveRoute: function(route) {
-      this.activeRoute = route;
+    setActiveRoutes: function(routes) {
+      this.activeRoutes = routes;
     }
   }
 
@@ -236,7 +237,7 @@
       RouterState.aliasRoutes = [];
       RouterState.orphanAliasRoutes = [];
       RouterState.routesByAlias = {};
-      RouterState.activeRoute = null;
+      RouterState.activeRoutes = null;
       RouterState.pathStyle = 'hash';
       RouterState.basePath = '';
       RouterState.autoStart = true;
@@ -358,7 +359,7 @@ setting unless you get conflicts
     },
 
     /**
-     * Registers a route
+     * Registers a route. See source for options documentation, since Polymer docs are borked when it comes to options.
      *
      * @param {string} path -- Path string
      * @param {object} options --
@@ -382,6 +383,9 @@ setting unless you get conflicts
       return route.token;
     },
 
+    /**
+     * the opposite of `register()`
+     */
     unregister: function(token) {
       RouterState.removeToken(token);
     },
@@ -494,30 +498,52 @@ setting unless you get conflicts
      * @return {{route: route, routeParams: params}}
      */
     _matchRoutes: function(path) {
-     for (var i=0; i<RouterState.routes.length; i++) {
-        var routeParams = RouterState.routes[i].match(path);
+      var routes = [];
+      for (var i=0; i<RouterState.routes.length; i++) {
+        var route = RouterState.routes[i];
+        var routeParams = route.match(path);
         if (routeParams) {
-          return {
-            route: RouterState.routes[i],
-            routeParams:routeParams
+          routes.push(  { route: route, routeParams: routeParams } );
+          if (route.activateStopPropagation) {
+            break;   // stop searching for routes only this route
           }
         }
       }
+      // eliminate activateExclusives if more than one
+      if (routes.length > 1) {
+        for (var i=0; i<routes.length; i++) {
+          if (routes[i].route.activateExclusive)
+            routes.splice(i--, 1);
+        }
+      }
+      if (routes.length > 0) {
+        return {
+          routes: routes,
+          destinationPath: path // RouterState.routes[i].getRoutePath(routeParams)
+        }
+      }
+
       return null;
     },
 
-    _findDestination: function(destination, routeParams) {
+    _findDestinations: function(destination, routeParams) {
       switch( this.getRouteType(destination)) {
         case 'alias':
           var route = this._findRouteByAlias(destination);
            if (route) {
-            return { route: route, routeParams: routeParams }
+            return {
+              routes: [{ route: route, routeParams: routeParams }],
+              destinationPath: route.getRoutePath(routeParams)
+            }
           }
           return;
         case 'token':
           var route = this._findRouteByToken(destination).resolveAlias();
           if (route) {
-            return { route: route, routeParams: routeParams }
+            return {
+              routes: [{ route: route, routeParams: routeParams}],
+              destinationPath: route.getRoutePath(routeParams)
+            }
           }
           return;
         case 'path':
@@ -530,15 +556,15 @@ setting unless you get conflicts
      * @param {token|alias|path} -- destination can be token,alias,or path
      */
     transitionTo: function(destination, routeParams) {
-      var dest = this._findDestination(destination, routeParams);
+      var dest = this._findDestinations(destination, routeParams);
       if (!dest) {
         throw new Error("Transition destination not found");
       }
       var transition = new Transition(
-        RouterState.activeRoute,
-        dest.route,
+        RouterState.activeRoutes,
+        dest.routes,
         {
-          routeParams: dest.routeParams,
+          destinationPath: dest.destinationPath,
           updateLocationCb: this._getPushStateCallback()
         }
       );
@@ -549,15 +575,15 @@ setting unless you get conflicts
      * Transition to new route, but replace existing URL in place (no history)
      */
     replaceWith: function(destination, routeParams) {
-      var dest = this._findDestination(destination, routeParams);
+      var dest = this._findDestinations(destination, routeParams);
       if (!dest) {
         throw new Error("Transition destination not found");
       }
       var transition = new Transition(
-        RouterState.activeRoute,
-        dest.route,
+        RouterState.activeRoutes,
+        dest.routes,
         {
-          routeParams: dest.routeParams,
+          destinationPath: dest.destinationPath,
           updateLocationCb: this._getPushStateCallback()
         }
       );
@@ -654,8 +680,8 @@ setting unless you get conflicts
       var match = this._matchRoutes(path);
       if (match) {
         var transition = new Transition(
-          RouterState.activeRoute,
-          match.route,
+          RouterState.activeRoutes,
+          match.routes,
           { routeParams: match.routeParams }
         );
         RouterState.startTransition(transition);
@@ -715,7 +741,9 @@ setting unless you get conflicts
     this.pathGenerator = pathToRegexp.compile(this.path);
     this.aliasRoutes = [];  // routes that are aliased to this one
 
-    this.alias = options ? options.alias : undefined; //
+    this.alias = options ? options.alias : undefined;
+    this.activateExclusive = options ? options.activateExclusive : false;
+    this.activateStopPropagation = options ? options.activateStopPropagation : false;
     this.willDeactivate = options ? options.willDeactivate : undefined;
     this.deactivate = options ? options.deactivate : undefined;
     this.willActivate = options ? options.willActivate : undefined;
@@ -764,6 +792,9 @@ setting unless you get conflicts
       for (var i=1; i<match.length; i++) {
         if (this.regexKeys[i-1].name) {
           routeParams[this.regexKeys[i-1].name] = match[i];
+        }
+        else {
+          routeParams[i-1] = match[i];  // anonymous parameters
         }
       }
       return routeParams;
@@ -877,19 +908,22 @@ setting unless you get conflicts
    */
 
   /**
-   * @param {Route} sources -- source routes
-   * @param {Route} destination -- destination routes
+   * @param {Route} sources -- [ { route: Route, routeParams: Map }*] sources routes
+   * @param {Route} destinations -- [ { route: Route, routeParams: Map } * ] destination routes
+   * @param {object} options
+   * @param {function} options.updateLocationCb -- function(destinationPath), called when transition is complete
+   * @param {string} options.destinationPath -- path transitioning to
    * @param {function} updateLocationCb --
    */
-  var Transition = function(source, destination, options) {
-    this.source = source;
-    if (!destination) {
+  var Transition = function(sources, destinations, options) {
+    this.sources = sources;
+    if (!destinations) {
       throw new Error('Transition without destination');
     }
-    this.destination = destination;
+    this.destinations = destinations;
 
     this._updateLocationCb = options ? options.updateLocationCb : null;
-    this._routeParams = options ? options.routeParams : null;
+    this._destinationPath = options ? options.destinationPath : null;
   }
 
   Transition.prototype = {
@@ -937,19 +971,40 @@ setting unless you get conflicts
     },
 
     /**
-     * processes all callbacks asynchronously, call done on completion
+     * @typedef { { routeParams: Map, callbacks: Array[function]} -- callbackRecord
+     * @typedef callbackList [ callbackRecord ]
+     * @return {callbackList} -- list of all callbacks with routeParams for all routes
+     */
+    _gatherCallbacksFromArray: function(routes, callbackName) {
+      var callbacks = [];
+      for (var i=0; i<routes.length; i++) {
+        var routeCallbacks = {
+          routeParams: routes[i].routeParams,
+          callbacks: this._gatherCallbacks(routes[i].route, callbackName)
+        }
+        callbacks.push(routeCallbacks);
+      }
+      return callbacks;
+    },
+
+    /**
+     * async. Processes all callbacks, call done on completion
      *
-     * @param {array(function)} callbacks
-     * @param {array} cbArgs
+     * @param {callbackList} -- callbacks
+     * @param {function({route, routeParams})} -- callbackArgMaker
      * @param {function} done -- completion callback
      */
-    _processCallbacks: function(callbacks, cbArgs, done) {
-      // process all synchronous callbacks first
-      if (callbacks.length === 0) {
+    _processCallbacks: function(callbackList, callbackArgMaker, done) {
+      // count the callbacks
+      var remaining = 0;
+      for (var i=0; i<callbackList.length; i++) {
+        remaining += callbackList[i].callbacks.length;
+      }
+      if (remaining === 0) {
         done();
         return;
       }
-      var remaining = callbacks.length;
+
       function decrementRemaining() {
         // calls done when all callbacks complete
         if (--remaining === 0) {
@@ -957,28 +1012,35 @@ setting unless you get conflicts
         }
       }
 
-      var syncArgs = [this].concat(cbArgs);
-      var asyncArgs = [this].concat(cbArgs).concat([decrementRemaining]);
+      for (var i=0; i<callbackList.length; i++) {
+        // prepare the callback arguments
+        var cbArgs = callbackArgMaker ? callbackArgMaker(callbackList[i]) : [];
+        var syncArgs = [this].concat(cbArgs);
+        var asyncArgs = [this].concat(cbArgs).concat([decrementRemaining]);
 
-      for (var i=0; i<callbacks.length; i++) {
-        if (callbacks[i].length <= syncArgs.length) {
-          // sync callback
-          try {
-            callbacks[i].apply(window, syncArgs);
-          }
-          catch(err) {
-            console.error('unexpected error in a callback', err);
-          }
-          decrementRemaining();
-        }
-        else {
-          // async callback
-          try {
-            callbacks[i].apply(window, asyncArgs);
-          }
-          catch(err) {
-            console.error('unexpected error in callback', err);
+        var callbacks = callbackList[i].callbacks;
+
+        // call all callbacks, sync or async
+        for (var j=0; j<callbacks.length; j++) {
+          if (callbacks[j].length <= syncArgs.length) {
+            // sync callback
+            try {
+              callbacks[j].apply(window, syncArgs);
+            }
+            catch(err) {
+              console.error('unexpected error in a callback', err);
+            }
             decrementRemaining();
+          }
+          else {
+            // async callback
+            try {
+              callbacks[j].apply(window, asyncArgs);
+            }
+            catch(err) {
+              console.error('unexpected error in callback', err);
+              decrementRemaining();
+            }
           }
         }
       }
@@ -986,12 +1048,13 @@ setting unless you get conflicts
 
     _willDeactivate: function() {
 
-      if (this.source) {
+      if (this.sources) {
         // willDeactivate for source + aliasRoutes
-        var callbacks = this._gatherCallbacks(this.source, 'willDeactivate');
+        var callbacks = this._gatherCallbacksFromArray(this.sources, 'willDeactivate');
+
         this._processCallbacks(
           callbacks,
-          [],
+          null,
           this._willDeactivateDone.bind(this)
         );
       }
@@ -1012,8 +1075,8 @@ setting unless you get conflicts
         return;
       }
       this._processCallbacks(
-        this._gatherCallbacks(this.destination, 'willActivate'),
-        this._getActivateCbArgs(),
+        this._gatherCallbacksFromArray(this.destinations, 'willActivate'),
+        this._getActivateCbArgs,
         this._willActivateDone.bind(this));
     },
 
@@ -1028,10 +1091,10 @@ setting unless you get conflicts
       if (this.aborted) {
         return;
       }
-      if (this.source) {
+      if (this.sources) {
         this._processCallbacks(
-          this._gatherCallbacks(this.source,  'deactivate'),
-          [],
+          this._gatherCallbacksFromArray(this.sources,  'deactivate'),
+          null,
           this._deactivateDone.bind(this)
         );
       }
@@ -1040,27 +1103,33 @@ setting unless you get conflicts
     },
 
     _deactivateDone: function() {
-      RouterState.setActiveRoute(null);
+      RouterState.setActiveRoutes(null);
       this._activate();
     },
 
-    _getActivateCbArgs: function() {
+
+    _getActivateCbArgs: function(callbackRecord) {
+      // WARNING: not bound to 'this'
       return [
-        {routeParams: this._routeParams}
+        {routeParams: callbackRecord.routeParams}
       ];
     },
 
     _activate: function() {
       this._processCallbacks(
-        this._gatherCallbacks(this.destination, 'activate'),
-        this._getActivateCbArgs(),
+        this._gatherCallbacksFromArray(this.destinations, 'activate'),
+        this._getActivateCbArgs,
         this._activateDone.bind(this));
     },
 
     _activateDone: function() {
-      if (this._updateLocationCb)
-        this._updateLocationCb(this.destination.getRoutePath(this._routeParams));
-      RouterState.setActiveRoute(this.destination);
+      if (this._updateLocationCb && this._destinationPath) {
+        //         this._destinationPath
+        if (this.destinations[0].route.getRoutePath(this.destinations[0].routeParams) != this._destinationPath)
+          console.warn('how can these paths be different?');
+        this._updateLocationCb(this._destinationPath);
+      }
+      RouterState.setActiveRoutes(this.destinations);
       this.aborted = true;  // ensure no other callbacks will run
     },
 

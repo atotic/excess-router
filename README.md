@@ -51,6 +51,11 @@ routing functionality also found in Angular, React, page.js.
   <a href="/#mainmenu"></>
 ```
 
+- multiple routes can be active at once.
+  - fine-grained control over matching: route can be active only if no others match
+  - see Polymer Starter Kit example below for usage examples.
+  - with this secret superpower, complex routing can be done with configuration only
+
 - configurable
   - '#' hash, or '/' path style paths.
   - hashPrefix
@@ -88,30 +93,40 @@ use `Excess.RouteManager` library and use your JS superpowers.
 How would you use this in Polymer Starter Kit?
 
 ```html
-<my-app>
-  <excess-route route="/:topmenu/:submenu"
-    topmenu="{{appRoute}}" submenu="{{submenu}}"></excess-route>
-  <excess-route route="/(.*)" redirect-to="/home"></excess-route>
-  <paper-menu attr-for-selected="route" selected="{{appRoute}}">
-    <a href="#/home" route="home">Home</a>
-    <a href="#/users/all" route="users">Users</a>
-    <a href="#/contact" route="contact">Contact</a>
-  </paper-menu>
-  <iron-pages attr-for-selected="route" selected="{{route}}">
-    <section route="home">...</section>
-    <section route="users">
-      <iron-pages attr-for-selected="user" selected="{{submenu}}">
-        <section user="all">
-          <p>This is the users section</p>
-            <a href="#/users/Rob">Rob</a>
-        </section>
-        <section user="Rob">
-          User:<span>{{submenu}}</span>
+    <my-app>
+      <!-- this route routes the main menu -->
+      <excess-route route="/:mainmenu/(.*)"
+        mainmenu="{{appRoute}}"></excess-route>
+      <!-- this wildcard route will redirect to default route if no other routes match-->
+      <excess-route route="/(.*)" redirect-to="/home" activation-modifiers="x"></excess-route>
+      <paper-menu attr-for-selected="route" selected="{{appRoute}}">
+        <a href="#/home" route="home">Home</a>
+        <a href="#/users/all" route="users">Users</a>
+        <a href="#/contact" route="contact">Contact</a>
+      </paper-menu>
+      <iron-pages attr-for-selected="route" selected="{{appRoute}}">
+        <section route="home">...</section>
+        <section route="users">
+          <!-- this route manages /users subtree -->
+          <excess-route route="/users/:userId" user-id="{{userId}}" active="{{hasUserId}}"></excess-route>
+          <template is="dom-if" if="{{!hasUserId}}">
+            <!-- if user id is not specified, show a list of users -->
+            <section user="all">
+              <p>This is the users section</p>
+                <a href="#/users/Rob">Rob</a>
+            </section>
+          </template>
+          <template is="dom-if" if="{{hasUserId}}">
+            <!-- if user id is specified, show the user -->
+            <iron-pages attr-for-selected="user" selected="{{userId}}">
+              <section user="Rob">
+                User:<span>{{userId}}</span>
+              </section>
+            </iron-pages>
+          </template>
         </section>
       </iron-pages>
-    </section>
-  </iron-pages>
-</my-app>
+    </my-app>
 ```
 
 ## Notes

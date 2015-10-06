@@ -97,63 +97,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         document.getElementById('simple').restore();
       });
 
-      // test('nested-route', function() {
-      //   document.getElementById('nested').create();
-      //   var routeElement = document.getElementById('barRoute');
-      //   assert.equal('/foo/bar', routeElement.fullRoute);
-      // });
-
-      // test('nested-route, prevent activation', function() {
-      //   document.getElementById('nested').create();
-      //   var routeElement = document.getElementById('barRoute');
-      //   Excess.RouteManager.transitionTo('/foo/bar');
-      //   assert.isTrue(routeElement.active);
-      //   // prevent activation
-      //   var bazElement = document.getElementById('bazRoute');
-      //   bazElement.addEventListener('excess-route-will-activate',
-      //     function(ev) {
-      //       ev.preventDefault();
-      //     }
-      //   );
-      //   Excess.RouteManager.transitionTo('/foo/baz');
-      //   assert.isTrue(routeElement.active);
-      //   assert.notOk(bazElement.active);
-      //   document.getElementById('nested').restore();
-      // });
-
-      // test('nested-route, prevent deactivation', function() {
-      //   document.getElementById('nested').create();
-      //   var barElement = document.getElementById('barRoute');
-      //   Excess.RouteManager.transitionTo('/foo/bar');
-      //   assert.isTrue(barElement.active);
-      //   // prevent activation
-      //   bazElement = document.getElementById('bazRoute');
-      //   barElement.addEventListener('excess-route-will-deactivate',
-      //     function(ev) {
-      //       ev.preventDefault();
-      //     }
-      //   );
-      //   Excess.RouteManager.transitionTo('/foo/baz');
-      //   assert.isTrue(barElement.active);
-      //   assert.notOk(bazElement.active);
-      //   document.getElementById('nested').restore();
-      // });
-
-      // test('nested-route, attribute reflection', function() {
-      //   document.getElementById('attributes').create();
-      //   var r1 = document.getElementById('r1');
-      //   var r2 = document.getElementById('r2');
-      //   var r3 = document.getElementById('r3');
-      //   Excess.RouteManager.transitionTo('/foo');
-      //   assert.equal(r1.foo, 'foo');
-      //   // parent reflection. given
-      //   Excess.RouteManager.transitionTo('/a/bar/c');
-      //   assert.equal(r1.foo, 'a');
-      //   assert.equal(r3.baz, 'c');
-      //   assert.isUndefined(r3.foo);
-      //   document.getElementById('attributes').restore();
-      // });
-
       test('redirect', function() {
         document.getElementById('redirection').create();
         var r1 = document.getElementById('r1');
