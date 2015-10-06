@@ -372,7 +372,7 @@ setting unless you get conflicts
     register: function(path, options) {
       options = options || {};
       var route;
-      if (options.isAliasRoute || this.getRouteType(path) === 'alias') {
+      if (options.isAliasRoute || this._getRouteType(path) === 'alias') {
         route = new AliasRoute(path, options);
         RouterState.addAliasRoute(route);
       }
@@ -437,7 +437,7 @@ setting unless you get conflicts
      * @param {string} -- route. Can be token ('toke-AV213'), alias ('@user'), or path ('/this/is/path')
      * @return {'alias'|'token'|'path'} -- kind of path this is
      */
-    getRouteType: function(routeSpecifier) {
+    _getRouteType: function(routeSpecifier) {
       if (routeSpecifier === null) {
         return null;
       }
@@ -459,7 +459,7 @@ setting unless you get conflicts
      * @return {array} -- array of keys for given route
      */
     getRouteKeys: function(routeSpecifier) {
-      switch(this.getRouteType(routeSpecifier)) {
+      switch(this._getRouteType(routeSpecifier)) {
         case 'alias':
           var r = this._findRouteByAlias(routeSpecifier);
           if (!r) {
@@ -479,11 +479,15 @@ setting unless you get conflicts
       }
     },
 
+    /**
+     * Concatenates paths, taking into account route type. You can use it with all route
+     * specifiers understood by RouteManager
+     */
     concatPaths: function(parentPath, childPath) {
       if (!childPath) {
         return null;
       }
-      switch(this.getRouteType(childPath)) {
+      switch(this._getRouteType(childPath)) {
         case 'alias':
           return childPath;
         case 'token':
@@ -527,7 +531,7 @@ setting unless you get conflicts
     },
 
     _findDestinations: function(destination, routeParams) {
-      switch( this.getRouteType(destination)) {
+      switch( this._getRouteType(destination)) {
         case 'alias':
           var route = this._findRouteByAlias(destination);
            if (route) {
