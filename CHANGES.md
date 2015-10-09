@@ -1,3 +1,7 @@
+0.9.3
+==================
+* bugfix: routeparameters reflection
+
 0.9.2
 ==================
 * bugfix: _setRouteFromLocation did not update _destinationPath

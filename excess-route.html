@@ -386,10 +386,12 @@ How would you use this in Polymer Starter Kit?
 
     _navigateToAttributes: function() {
       var routeParams = {};
+
       for (var p in this.routeParams) {
         routeParams[p] = this.routeParams[p];
       }
-      for (var i=0, key=this._routeKeys[i]; i<this._routeKeys.length; i++) {
+      for (var i=0; i<this._routeKeys.length; i++) {
+        var key = this._routeKeys[i]
         routeParams[key] = this[key];
       }
       this.transitionTo(routeParams);
