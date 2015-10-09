@@ -1,5 +1,6 @@
 0.9.2
 ==================
+* bugfix: _setRouteFromLocation did not update _destinationPath
 * bugfix: excess-route: setting parameter to undefined should not cause navigation
 
 0.9.1

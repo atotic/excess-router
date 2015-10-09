@@ -594,6 +594,29 @@ setting unless you get conflicts
       RouterState.startTransition(transition);
     },
 
+    _setRouteFromLocation: function() {
+      var path = this._extractLocationPath();
+      if (!path) {
+        console.warn('popstate could not extract path',
+          window.location.pathname);
+        return;
+      }
+      var dest = this._matchRoutes(path);
+      if (dest) {
+        var transition = new Transition(
+          RouterState.activeRoutes,
+          dest.routes,
+          {
+            destinationPath: dest.destinationPath
+          }
+        );
+        RouterState.startTransition(transition);
+      }
+      else {
+        console.warn('no matching routes found in popstate');
+      }
+    },
+
     _startAnchorRouting: function() {
       if (!RouterState.anchorRouting) {
         if (this._anchorRoutingListener) {
@@ -672,27 +695,6 @@ setting unless you get conflicts
         }
       }
       return path;
-    },
-
-    _setRouteFromLocation: function() {
-      var path = this._extractLocationPath();
-      if (!path) {
-        console.warn('popstate could not extract path',
-          window.location.pathname);
-        return;
-      }
-      var match = this._matchRoutes(path);
-      if (match) {
-        var transition = new Transition(
-          RouterState.activeRoutes,
-          match.routes,
-          { routeParams: match.routeParams }
-        );
-        RouterState.startTransition(transition);
-      }
-      else {
-        console.warn('no matching routes found in popstate');
-      }
     },
 
     _handlePopState: function(ev) {
@@ -939,6 +941,8 @@ setting unless you get conflicts
     abort: function(abortOptions) {
       if (this.aborted) // only first abort counts
         return;
+      // console.log('abort');
+
       this.aborted = true;
       if (abortOptions) {
         if (abortOptions.redirectTo) {
@@ -951,6 +955,9 @@ setting unless you get conflicts
     },
 
     start: function() {
+      // if (!this._destinationPath)
+      //   debugger;
+      // console.log('transition.start', this._destinationPath);
       this._willDeactivate();
     },
 
@@ -1107,6 +1114,9 @@ setting unless you get conflicts
     },
 
     _deactivateDone: function() {
+      if (this.aborted) {
+        return;
+      }
       RouterState.setActiveRoutes(null);
       this._activate();
     },
@@ -1120,6 +1130,9 @@ setting unless you get conflicts
     },
 
     _activate: function() {
+      if (this.aborted) {
+        return;
+      }
       this._processCallbacks(
         this._gatherCallbacksFromArray(this.destinations, 'activate'),
         this._getActivateCbArgs,
@@ -1127,6 +1140,10 @@ setting unless you get conflicts
     },
 
     _activateDone: function() {
+      if (this.aborted) {
+        return;
+      }
+      // console.log('transition._activateDone', this._destinationPath);
       if (this._updateLocationCb && this._destinationPath) {
         //         this._destinationPath
         if (this.destinations[0].route.getRoutePath(this.destinations[0].routeParams) != this._destinationPath)
