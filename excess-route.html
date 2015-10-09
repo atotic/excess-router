@@ -137,6 +137,8 @@ How would you use this in Polymer Starter Kit?
       </iron-pages>
     </my-app>
 
+## Tips
+- setting a routes attribute to undefined will not trigger navigation, because navigating to undefined parameters is nonsensical
 @demo
 -->
 <dom-module id="excess-route">
@@ -291,7 +293,7 @@ How would you use this in Polymer Starter Kit?
             // console.log('set ', name, val);
             this[ATTR_PREFIX + name] = val;
             this.fire(name + '-changed');
-            if (!this._blockParamNavigation && this.active) {
+            if (!this._blockParamNavigation && this.active && val != undefined) {
               this.debounce('paramNavigation', this._navigateToAttributes);
             }
           }

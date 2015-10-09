@@ -1,3 +1,7 @@
+0.9.2
+==================
+* bugfix: excess-route: setting parameter to undefined should not cause navigation
+
 0.9.1
 ==================
 * bugfix: activationModifiers were swapped in excess-route
