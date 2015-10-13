@@ -617,6 +617,37 @@ setting unless you get conflicts
       }
     },
 
+    _routeAnchor: function(anchor) {
+      if (anchor.protocol === 'javascript:')
+        return false;
+      var route;
+      switch(RouterState.pathStyle) {
+        case 'hash':
+          route = anchor.hash;
+          if (StringStartsWith(route, RouterState.hashPrefix)) {
+            route = route.replace(RouterState.hashPrefix, '');
+          }
+          break;
+        case 'path':
+          route = anchor.pathname;
+          if (StringStartsWith(route,RouterState.basePath)) {
+            route = route.replace(RouterState.basePath, '');
+          }
+          break;
+      }
+      if (route) {
+        try {
+          this.transitionTo(route);
+          return true;
+        }
+        catch(err) {
+          console.warn('anchor route not found', route);
+          return false;
+        }
+      }
+      return false;
+    },
+
     _startAnchorRouting: function() {
       if (!RouterState.anchorRouting) {
         if (this._anchorRoutingListener) {
@@ -628,18 +659,8 @@ setting unless you get conflicts
         if (!this._anchorRoutingListener) {
           this._anchorRoutingListener = document.addEventListener('click', function(ev) {
             if (ev.target.nodeName === 'A') {
-              try {
-                var href = ev.target.getAttribute('href');
-                if (StringStartsWith(href,RouterState.hashPrefix)) {
-                  href = href.replace(RouterState.hashPrefix, '');
-                }
-                if (href) {
-                  this.transitionTo(href);
-                  ev.preventDefault();
-                }
-              }
-              catch(err) {
-                console.warn('anchor route not found', href);
+              if (this._routeAnchor(ev.target)) {
+                ev.preventDefault();
               }
             }
           }.bind(this));
@@ -673,7 +694,7 @@ setting unless you get conflicts
           path = '/';
         }
         else if (RouterState.basePath) {
-          var match = window.location.pathname.match(RouterState.basePath + "(.*}");
+          var match = window.location.pathname.match(RouterState.basePath + "(.*)");
           if (!match) {
             console.error("Base path does not match window.location");
           }
@@ -1146,8 +1167,9 @@ setting unless you get conflicts
       // console.log('transition._activateDone', this._destinationPath);
       if (this._updateLocationCb && this._destinationPath) {
         //         this._destinationPath
-        if (this.destinations[0].route.getRoutePath(this.destinations[0].routeParams) != this._destinationPath)
-          console.warn('how can these paths be different?');
+        // if (this.destinations[0].route.getRoutePath(this.destinations[0].routeParams) != this._destinationPath)
+        //   console.warn('how can these paths be different?');
+        // this happens when you have optional matches
         this._updateLocationCb(this._destinationPath);
       }
       RouterState.setActiveRoutes(this.destinations);

@@ -90,6 +90,7 @@ use `Excess.RouteManager` library and use your JS superpowers.
 
 ## Example
 
+See demo for a fully working example.
 How would you use this in Polymer Starter Kit?
 
 ```html

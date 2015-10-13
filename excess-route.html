@@ -280,6 +280,10 @@ How would you use this in Polymer Starter Kit?
     _monitorAttributes: function(attributes) {
        // console.log("monitoring", attributes);
       var defProp = function(name) {
+        // munge userId -> user-id
+        var broadcastName = name.replace(/[A-Z]/, function(match) {
+          return '-' + match.toLowerCase();
+        });
         Object.defineProperty(this, name, {
           configurable: true,
           enumerable: true,
@@ -292,7 +296,7 @@ How would you use this in Polymer Starter Kit?
               return;
             // console.log('set ', name, val);
             this[ATTR_PREFIX + name] = val;
-            this.fire(name + '-changed');
+            this.fire(broadcastName + '-changed');
             if (!this._blockParamNavigation && this.active && val != undefined) {
               this.debounce('paramNavigation', this._navigateToAttributes);
             }

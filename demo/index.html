@@ -10,64 +10,162 @@
 
   <link rel="import" href="../../iron-selector/iron-selector.html">
   <link rel="import" href="../../iron-pages/iron-pages.html">
+  <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
 </head>
 <body>
   <style>
     excess-route[active] {
       background-color: #AAA;
     }
-    .iron-selected {
-      background-color: #AAA;
+
+    iron-selector > div {
+      border-bottom: 1px dashed gray;
+      cursor: pointer;
+    }
+    iron-selector > div.iron-selected {
+      background-color: #ECF2C8;
+    }
+    #warning {
+      border: 4px solid red;
+      font-size: larger;
     }
     p {
       margin: 4px;
     }
+    h3 {
+      margin: 8px 0 8px 0;
+    }
+    #example {
+      height: 220px;
+      max-width: 500px;
+      border: 1px solid blue;
+    }
   </style>
-  <excess-router-config></excess-router-config>
+
+
   <template is="dom-bind" id="t1">
-    <h3><a href="" target="_top">View</a> this demo in top window to view URL changes</h3>
-    <hr>
-      <p> template.selected is <span>{{selected}}</span></p>
-    <hr>
-    <p>Try anchor navigation
-    <a href="#/abc/0">/abc/0</a>
-    <a href="#/abc/1">/abc/1</a>
-    <a href="#/abc/2">/abc/2</a>
-    </p>
-    <hr>
-    <!--  This route ties {{selected}} with the URL -->
-    <excess-route route="/abc/:selected"
-      selected="{{selected}}"></excess-route>
+    <!-- FRAME WARNING -->
+    <template is="dom-if" if="{{inFrame}}">
+      <div id="warning">
+        <p>You can't view the URL changes because you are viewing this page in a frame.</p>
+        <p>You <b>want</b> to see that URL, that's what routing is all about</p>
+        <p><a href="" target="_new">Fix it</a> by opening this demo in a new window.</p>
+      </div>
+    </template>
 
-    <p>iron-selector</p>
-    <iron-selector selected="{{selected}}">
-      <div>A</div>
-      <div>B</div>
-      <div>C</div>
-    </iron-selector>
+    <h3>Global configuration</h3>
+    <excess-router-config manual-start
+      path-style="{{pathStyle}}"
+      base-path="{{basePath}}"
+      ></excess-router-config>
 
-    <hr>
-    <p>iron-pages</p>
-    <iron-pages selected="{{selected}}">
-      <div>Page 0</div>
-      <div>Page 1</div>
-      <div>Page 2</div>
-    </iron-pages>
+    <p><code>excess-router-config</code> element configures global router settings.</p>
+    <p>This menu lets you demo and switch between different path styles</p>
+    <select id="select" value="{{pathStyle::change}}">
+      <option value="hash">Hash</option>
+      <option value="path">Path</option>
+    </select>
+    <h3>Setting up: routes</h3>
+    <p><code>excess-route</code> element is used to define your routes.</p>
+    <p>Think of it as a regular expression you attach to window's location. The <code>excess-route</code> exposes its regex matches through the attributes.</p>
+    <br>
+    <p>In this example, :foo and {{charlie}} will always be the same when route matches:</p>
+<pre>
+ &lt;excess-route route="/:foo/:bar" foo="{{charlie}}" bar="{{delta}}">&lt;/excess-route></pre>
 
-    <hr>
-
-    <p>To set up a default application route, use a "match everything" route that redirects to the default.
+    <p>Route activates when it matches window's location.</p>
+    <p>Multiple routes can be active at once.</p>
+    <p>Route are defined with <a href="https://github.com/pillarjs/path-to-regexp">express</a> regex syntax. You can use wildcards, optional arguments.</p>
+    <br>
+    <p>Lets implement a classic routing problem, aka Polymer Starter Kit. It has 3 main pages, and a page for every user</p>
+    <ul>
+      <li>demo page-- shows our demo page, the default</li>
+      <li>about page-- shows an about page</li>
+      <li>user list page -- shows a list of users</li>
+      <li>users/username pages -- shows information about particular user 'username'</li>
+    </ul>
+    <p>This translates into these routes:</p>
     <pre>
-    &lt;excess-route route="/(.*)" redirect-to="/abc/0"> &lt;/excess-route>
-    </pre>
-    <excess-route route="/(.*)" redirect-to="/abc/0"></excess-route>
+      // mainmenu switches between main pages: about|demo|users
+      // .* at the end allows it to match /users/username
+      &lt;excess-rote route="/:mainmenu/(.*)" mainmenu="{{main}}">&lt;/excess-route>
 
+      // users/username matches when particular user is requested
+      &lt;excess-route route="/users/:username" username="{{user}}">&lt;/excess-route>
 
+      // wildcard redirects to our demo route, if no other route matches
+      &lt;excess-route route="/(.*)" redirect-to="/demo" activation-modifiers="x">&lt;/excess-route></pre>
+
+    <h3>Setting up: elements to respond to route changes</h3>
+    <p>Routing should cause UI to change.</p>
+    <p>Change the UI with properties bound to your routes.</p>
+    <p>The example below fully implements this routing:</p>
+    <div id="example" class="layout horizontal">
+      <excess-route route="/:main/(.*)?" main="{{mainmenu}}"></excess-route>
+      <excess-route route="/users/:userId" user-id="{{userId}}" active="{{userActive}}"></excess-route>
+      <excess-route route="/(.*)" redirect-to="/demo" activation-modifiers="x"></excess-route>
+        <div flex style="width: 20%;border-right: 1px solid gray; padding: 8px; background-color: #D2E3D2">
+          <iron-selector selected="{{mainmenu}}" attr-for-selected="name">
+            <div name="about">about</div>
+            <div name="demo">demo</div>
+            <div name="users">users</div>
+          </iron-selector>
+        </div>
+        <div flex style="width: 80%;background-color: #DEE5DE;padding:8px" >
+          <iron-pages selected="{{mainmenu}}" attr-for-selected="name">
+            <div name="about" style="font-size:larger;font-style:italic"><i>I am the about page.</i></div>
+            <div name="demo" style="font-size:larger;font-weight:900">I am the demo page.</div>
+            <div name="users" >
+              <template is="dom-if" if="{{!userActive}}" restamp>
+                  <p>List of users</p>
+                  <ul>
+                    <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Alpha')">Alpha</a></li>
+                    <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Bravo')">Bravo</a></li>
+                    <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Dieter')">Dieter</a></li>
+                    <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Milorad')">Milorad</a></li>
+                  </ul>
+                  <p>The links above are javascript so they'll work with both hash and path routing. Links below are bare, no js:</p>
+                  <p><a href="#/users/Sierra">Sierra</a> is a sample hash link</p>
+                  <p><a href="users/Juliet">Juliet</a> is a sample path link</p>
+              </template>
+              <template is="dom-if" if="{{userActive}}" restamp>
+                <p>This user's name is <span>{{userId}}</span></p>
+              </template>
+            </div>
+          </iron-pages>
+        </div>
+    </div>
+  <h3>Navigation</h3>
+  <p>How do you transition between routes</p>
+  <ol>
+    <li>By changing active route's properties. That's what we are using for main navigation in the example</li>
+    <li>Anchor navigation. Excess routing library can intercept anchor clicks and route them. Raw user links in the example use this.</li>
+    <li>javascript. Call the routing library directly, using transitionTo, or replaceWith. javascript: user links in the example use this.</li>
+  </ol>
+  <h3>Beyond demo</h3>
+  <p>The Polymer elements are built on top of a javascript library, Excess.RouteManager. Use it for those tricky problems you can't solve with elements.</p>
+  <p>Read the docs to learn more about configuration options, transition's lifecycle, and other advanced topics.</p>
   </template>
 
   <script>
+    function inFrame () {
+      try {
+          return window.self !== window.top;
+      } catch (e) {
+          return true;
+      }
+    }
+
     var t = document.querySelector('#t1');
-    t.selected = 0;
+    t.addEventListener('dom-change', function() {
+      t.userActive = false;
+      t.pathStyle = 'hash';
+      var m = window.location.pathname.match(/(.*)\/demo/);
+      t.basePath = m ? m[1] + '/demo' : '';
+      t.inFrame = inFrame();
+       // manual start because we are inside dom-bind template
+      Excess.RouteManager.start();
+    });
   </script>
 
 </body>

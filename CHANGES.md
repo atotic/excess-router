@@ -1,6 +1,13 @@
+TODO
+==================
+bugfix: anchorRouting with paths
+
 0.9.3
 ==================
 * bugfix: routeparameters reflection
+* bugfix: navigation with basepaths
+* bugfix: camelCase attributes were not firing correct change events
+* fixed and updated the demo to Polymer Starter Kit
 
 0.9.2
 ==================
