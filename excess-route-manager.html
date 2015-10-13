@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <script src="pathToRegexp.js"></script>
+<script src="../url-search-params/build/url-search-params.js"></script>
 <script>
 (function() {
   'use strict';
@@ -99,8 +100,11 @@
     // Routes starting with aliasPathPrefix will be interpreted as aliases
     aliasPathPrefix: '@',
 
-    // hash|path
+    // hash|path|search
     pathStyle: 'hash',
+
+    // name for the search parameter when using the `search` `pathStyle`
+    searchParamName: 'page',
 
     // Routes starting with token prefix are tokens
     tokenPrefix: 'toke-',
@@ -309,7 +313,7 @@ routes are not ready by then, set to false, and call RouteManager.start() when r
 - `basePath: ''`. base path for path style routing. Set to your app's root path.
 - `hashPrefix: '#'`. Prefix for hash paths. You might also like '#!'
 - `aliasPathPrefix: '@'`. Routes starting with aliasPathPrefix will be interpreted as aliases
-- `pathStyle: 'hash'`. Are your paths hashes, or real paths? 'hash'|'path'
+- `pathStyle: 'hash'`. Are your paths hashes, search param, or real paths? 'hash'|'path' | 'search'
 - `tokenPrefix: 'toke-'`. Routes starting with token prefix are tokens. You can ignore this
 setting unless you get conflicts
 
@@ -334,9 +338,10 @@ setting unless you get conflicts
      * @param {object} options --
      * @param {boolean} options.anchorRouting -- true if anchor clicks should be intercepted
      * @param {string} options.autoStart -- automatically start on WebComponentsReady
-     * @param {string} options.pathStyle -- hash/path
+     * @param {string} options.pathStyle -- hash/path/search
      * @param {string} options.basePath -- base path for path routing
      * @param {string} options.hashPrefix -- hash prefix: default '#', set '#!' if you need it
+     * @params {string} options.searchParamName --
      * @param {string} options.aliasPathPrefix -- paths with this prefix are considered alias. default '@'
      */
     configure: function(options) {
@@ -347,6 +352,7 @@ setting unless you get conflicts
         'hashPrefix',
         'aliasPathPrefix',
         'pathStyle',
+        'searchParamName',
         'tokenPrefix'
       ].forEach( function(p) {
         if (p in options) {
@@ -409,11 +415,15 @@ setting unless you get conflicts
     },
 
     _urlFromRoutePath: function(routePath) {
-      if (RouterState.pathStyle === 'hash') {
-        return RouterState.hashPrefix + routePath;
-      }
-      else {
-        return RouterState.basePath + routePath;
+      switch(RouterState.pathStyle) {
+        case 'hash':
+          return RouterState.hashPrefix + routePath;
+        case 'path':
+          return RouterState.basePath + routePath;
+        case 'search':
+          var searchParams = new URLSearchParams(window.location.search.substring(1));
+          searchParams.set(RouterState.searchParamName, routePath);
+          return '?' + searchParams.toString();
       }
     },
 
@@ -634,6 +644,10 @@ setting unless you get conflicts
             route = route.replace(RouterState.basePath, '');
           }
           break;
+        case 'search':
+          var searchParams = new URLSearchParams(anchor.search.substring(1));
+          route = searchParams.get(RouterState.searchParamName);
+          break;
       }
       if (route) {
         try {
@@ -687,34 +701,40 @@ setting unless you get conflicts
      */
     _extractLocationPath: function() {
       var path;
-
-      if (RouterState.pathStyle === 'path') {
-        // Parse path-style path
-        if (!window.location.pathname) {
-          path = '/';
-        }
-        else if (RouterState.basePath) {
-          var match = window.location.pathname.match(RouterState.basePath + "(.*)");
-          if (!match) {
-            console.error("Base path does not match window.location");
+      switch(RouterState.pathStyle) {
+        case 'path': {
+          if (!window.location.pathname) {
+            path = '/';
           }
-          else
-            path = match[1];
+          else if (RouterState.basePath) {
+            var match = window.location.pathname.match(RouterState.basePath + "(.*)");
+            if (!match) {
+              console.error("Base path does not match window.location");
+            }
+            else
+              path = match[1];
+          }
+          else { // no basePath
+            path = window.location.pathname;
+          }
         }
-        else { // no basePath
-          path = window.location.pathname;
+        break;
+        case 'search': {
+          var searchParams = new URLSearchParams(window.location.search.substring(1));
+          path = searchParams.get(RouterState.searchParamName) || '/';
         }
+        break;
+        case 'hash':
+          if (!window.location.hash) {
+            path = '/';
+          } else {
+            path = window.location.hash.replace(RouterState.hashPrefix, '');
+            if (path[0] != '/') // ordinary hash?
+              path = undefined;
+          }
+        break;
       }
-      else { // _pathStyle === 'hash'
-        // Parse hash-style path
-        if (!window.location.hash) {
-          path = '/';
-        } else {
-          path = window.location.hash.replace(RouterState.hashPrefix, '');
-          if (path[0] != '/') // ordinary hash?
-            path = undefined;
-        }
-      }
+
       return path;
     },
 

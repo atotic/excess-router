@@ -36,7 +36,7 @@
       margin: 8px 0 8px 0;
     }
     #example {
-      height: 220px;
+      height: 250px;
       max-width: 500px;
       border: 1px solid blue;
     }
@@ -64,6 +64,7 @@
     <select id="select" value="{{pathStyle::change}}">
       <option value="hash">Hash</option>
       <option value="path">Path</option>
+      <option value="search">Search</option>
     </select>
     <h3>Setting up: routes</h3>
     <p><code>excess-route</code> element is used to define your routes.</p>
@@ -127,6 +128,7 @@
                   <p>The links above are javascript so they'll work with both hash and path routing. Links below are bare, no js:</p>
                   <p><a href="#/users/Sierra">Sierra</a> is a sample hash link</p>
                   <p><a href="users/Juliet">Juliet</a> is a sample path link</p>
+                  <p><a href="?page=%2Fusers%2FVictor">Victor</a> is a sample search link</p>
               </template>
               <template is="dom-if" if="{{userActive}}" restamp>
                 <p>This user's name is <span>{{userId}}</span></p>

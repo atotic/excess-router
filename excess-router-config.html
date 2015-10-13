@@ -83,6 +83,13 @@ Notes:
       },
 
       /**
+       * query parameter for search paths
+       */
+      searchParamName: {
+        type: String,
+        value: 'page'
+      },
+      /**
        * prefix for internally generated path tokens
        */
       tokenPrefix: {
@@ -93,10 +100,10 @@ Notes:
     },
 
     observers: [
-      '_configurationChanged(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix)'
+      '_configurationChanged(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, searchParamName, tokenPrefix)'
     ],
 
-    _configurationChanged: function(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix) {
+    _configurationChanged: function(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, searchParamName, tokenPrefix) {
       Excess.RouteManager.configure({
         anchorRouting: anchorRouting,
         autoStart: !manualStart,
@@ -104,6 +111,7 @@ Notes:
         hashPrefix: hashPrefix,
         aliasPathPrefix: aliasPathPrefix,
         pathStyle: pathStyle,
+        searchParamName: searchParamName,
         tokenPrefix: tokenPrefix
       });
     }

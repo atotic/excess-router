@@ -19,7 +19,8 @@
     "router"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.0"
+    "polymer": "Polymer/polymer#^1.0.0",
+    "url-search-params": "WebReflection/url-search-params#^0.2.0"
   },
   "devDependencies": {
     "web-component-tester": "*",
