@@ -41,7 +41,7 @@ routing functionality also found in Angular, React, page.js.
 
 - redirection
 ```html
-  <excess-route route="/*" redirect_to="/
+  <excess-route route="/*" redirect_to="/mainmenu">
 ```
 
 - route transition lifecycle callbacks: willDeactivate, willActivate
