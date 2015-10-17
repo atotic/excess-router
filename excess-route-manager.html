@@ -140,7 +140,7 @@
 
       var activeIdx = this.activeRoutes ? this.activeRoutes.indexOf(route) : -1;
       if (activeIdx != -1) {
-        console.warn('removing currently active route');
+        // console.warn('removing currently active route');
         this.activeRoutes.splice(activeIdx, 1);
         RouteManager._setRouteFromLocation();
       }
@@ -224,7 +224,8 @@
 
     setActiveRoutes: function(routes) {
       this.activeRoutes = routes;
-    }
+    },
+
   }
 
   /**
@@ -375,10 +376,22 @@ setting unless you get conflicts
       if (options.isAliasRoute || this._getRouteType(path) === 'alias') {
         route = new AliasRoute(path, options);
         RouterState.addAliasRoute(route);
+        if (this._started &&
+          route.parent && route.parent.match(this._extractLocationPath())) {
+          this._setRouteFromLocation();
+        }
       }
       else {
         route = new Route(path, options);
         RouterState.addRoute(route);
+        try {
+          // activate route if matches
+          if (this._started && route.match(this._extractLocationPath()))
+            this._setRouteFromLocation();
+        }
+        catch(err) {
+          console.warn(err);  // new code, see if something breaks
+        }
       }
       return route.token;
     },

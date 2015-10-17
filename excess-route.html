@@ -278,10 +278,10 @@ How would you use this in Polymer Starter Kit?
      * adds get/set methods for all attributes
      */
     _monitorAttributes: function(attributes) {
-       // console.log("monitoring", attributes);
+       // console.log("monitoring", this.route, attributes);
       var defProp = function(name) {
         // munge userId -> user-id
-        var broadcastName = name.replace(/[A-Z]/, function(match) {
+        var broadcastName = name.replace(/[A-Z]/g, function(match) {
           return '-' + match.toLowerCase();
         });
         Object.defineProperty(this, name, {
@@ -361,7 +361,7 @@ How would you use this in Polymer Starter Kit?
     },
 
     _activate: function(transaction, activationParams) {
-      // console.log("Active ", this.route);
+      // console.log("activate ", this.route);
       this._setAndReflectRouteParams(activationParams.routeParams);
       this._setActive(true);
     },
@@ -402,6 +402,7 @@ How would you use this in Polymer Starter Kit?
     },
 
     _routeChanged: function(newRoute, oldRoute) {
+      // console.log("routeChanged", newRoute);
       if (this._routeKeys) {
         this._stopMonitoringAttributes(
           Excess.RouteManager.getRouteKeys(this.oldRoute));
@@ -411,6 +412,7 @@ How would you use this in Polymer Starter Kit?
     },
 
     _routingInformationChanged: function(route) {
+      // console.log("_routingInformationChanged", route);
       if (this._routeToken) {
         Excess.RouteManager.unregister(this._routeToken);
         this._routeToken = null;

@@ -3,6 +3,8 @@ TODO
 
 0.9.4
 ==================
+* bugfix: activate route on register if router started
+* bugfix: routeparameters reflection (again, that /g flag)
 
 0.9.3
 ==================
