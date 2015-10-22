@@ -2,6 +2,8 @@
 
 Express-style routing for Polymer
 
+Live [docs and demo](http://atotic.github.io/excess-router/components/excess-router/)
+
 ## Example
 ```html
 <my-app>

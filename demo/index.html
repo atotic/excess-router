@@ -87,14 +87,14 @@
 <pre>
   &lt;excess-route route="/<span class="c1">:media</span>" media="{{<span class="c1">myMedia</span>}}">&lt;/excess-route>
 
-  // http://example.com/book, http://example.com/movie match
+  // http://example.com/<span class="c1">book</span>, http://example.com/<span class="c1">movie</span> match
   // http://example.com/movie/Groundhog does not match
 </pre>
     <h4>Example 3: multiple parameters</h4>
 <pre>
   &lt;excess-route route="/<span class="c1">:media</span>/<span class="c2">:title</span>" media="{{<span class="c1">myMedia</span>}}" title="{{<span class="c2">myTitle</span>}}">&lt;/excess-route>
 
-  // http://example.com/movie/Groundhog matches
+  // http://example.com/<span class="c1">movie</span>/<span class="c2">Groundhog</span> matches
   // http://example.com/book, http://example.com/movie do not match because they have no title
 </pre>
 
@@ -103,7 +103,7 @@
 <pre>
   &lt;excess-route route="/<span class="c1">:media</span>/<span class="c2">:title</span>?" media="{{<span class="c1">myMedia</span>}}" title="{{<span class="c2">myTitle</span>}}">&lt;/excess-route>
 
-  // http://example.com/book, http://example.com/movie, http://example.com/movie/Groundhog all match
+  // http://example.com/<span class="c1">book</span>, http://example.com/<span class="c1">movie</span>, http://example.com/<span class="c1">movie</span>/<span class="c2">Groundhog</span> all match
   // this is because title is now optional with ? flag
 </pre>
     <h4>Example 5: wildcards</h4>
