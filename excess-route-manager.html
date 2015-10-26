@@ -26,9 +26,7 @@
     if (str == null) {
       throw TypeError();
     }
-    if (search && toString.call(search) == '[object RegExp]') {
-      throw TypeError();
-    }
+
     var stringLength = str.length;
     var searchString = String(search);
     var searchLength = searchString.length;
