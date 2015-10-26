@@ -1,3 +1,6 @@
+0.9.6
+==================
+
 0.9.5
 ==================
 * bugfix: IE did not work: toString.call does not exist
