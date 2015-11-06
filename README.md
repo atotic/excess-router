@@ -2,7 +2,7 @@
 
 Express-style routing for Polymer
 
-Live [docs and demo](http://atotic.github.io/excess-router/components/excess-router/)
+Live [demo](http://atotic.github.io/excess-router/components/excess-router/demo/index.html) and [docs](http://atotic.github.io/excess-router/components/excess-router/)
 
 ## Example
 ```html
