@@ -3,7 +3,7 @@
 
 0.9.6
 ==================
-* bugfix: changing routes throws null exceptiion
+* bugfix: changing routes throws null exception
 
 0.9.5
 ==================
