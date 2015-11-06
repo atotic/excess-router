@@ -40,19 +40,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
   </test-fixture>
 
-<!--
-  <test-fixture id="nested">
-    <template>
-      <excess-route id="simpleRoute" route="/foo"
-      >
-        <excess-route id="barRoute" route="/bar">
-        </excess-route>
-        <excess-route id="bazRoute" route="/baz">
-        </excess-route>
-      </excess-route>
-    </template>
-  </test-fixture> -->
-
   <test-fixture id="attributes">
     <template>
       <excess-route id="r1" route="/:foo">
@@ -70,6 +57,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <excess-route id="r2" route="/*" redirect-to="@default"></excess-route>
     </template>
   </test-fixture>
+
 
   <script>
     suite('excess-router-config', function() {
@@ -106,6 +94,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // r2 redirected to r1
         assert.isTrue(r1.active);
 
+      });
+
+      test('change route', function() {
+        document.getElementById('simple').create();
+        var routeElement = document.getElementById('simpleRoute');
+        routeElement.route = "/abc/def";
+        Excess.RouteManager.transitionTo('/abc/def');
+        assert.isTrue(routeElement.active);
+        document.getElementById('simple').restore();
       });
 
     });

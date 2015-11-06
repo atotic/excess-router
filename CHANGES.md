@@ -1,5 +1,9 @@
+0.9.7
+==================
+
 0.9.6
 ==================
+* bugfix: changing routes throws null exceptiion
 
 0.9.5
 ==================

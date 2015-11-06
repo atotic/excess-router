@@ -405,7 +405,7 @@ How would you use this in Polymer Starter Kit?
       // console.log("routeChanged", newRoute);
       if (this._routeKeys) {
         this._stopMonitoringAttributes(
-          Excess.RouteManager.getRouteKeys(this.oldRoute));
+          Excess.RouteManager.getRouteKeys(oldRoute));
       }
       this._routeKeys = Excess.RouteManager.getRouteKeys(newRoute);
       this._monitorAttributes(this._routeKeys);
