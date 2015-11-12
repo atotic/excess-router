@@ -1,5 +1,7 @@
 0.9.7
 ==================
+* bugfix: enforce route parameters to be strings
+* bugfix: activate multiple routes when transitioning via route
 
 0.9.6
 ==================

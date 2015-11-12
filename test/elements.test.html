@@ -40,17 +40,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
   </test-fixture>
 
-  <test-fixture id="attributes">
-    <template>
-      <excess-route id="r1" route="/:foo">
-        <excess-route id="r2" route="/bar">
-          <excess-route id="r3" route="/:baz">
-          </excess-route>
-        </excess-route>
-      </excess-route>
-    </template>
-  </test-fixture>
-
   <test-fixture id="redirection">
     <template>
       <excess-route id="r1" route="/foo" route-alias="default"></excess-route>
@@ -58,6 +47,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
   </test-fixture>
 
+  <test-fixture id="attributes">
+    <template>
+      <excess-route id="r1" route="/:main/:subMenu"></excess-route>
+    </template>
+  </test-fixture>
 
   <script>
     suite('excess-router-config', function() {
@@ -71,10 +65,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     suite('excess-route', function() {
 
+      var currentUrl = "";
+
       setup( function() {
         Excess.RouteManagerTest.reset();
         Excess.RouteManagerTest.updateStateCb = function(url) {
-          console.log('update state', url);
+          currentUrl = url;
+          // console.log('update state', url);
         }
       });
 
@@ -93,16 +90,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         Excess.RouteManager.transitionTo('/notaroute');
         // r2 redirected to r1
         assert.isTrue(r1.active);
-
+        document.getElementById('redirection').restore();
       });
 
-      test('change route', function() {
+      test('change excess-route.route', function() {
         document.getElementById('simple').create();
         var routeElement = document.getElementById('simpleRoute');
         routeElement.route = "/abc/def";
         Excess.RouteManager.transitionTo('/abc/def');
         assert.isTrue(routeElement.active);
         document.getElementById('simple').restore();
+      });
+
+      test('route params string conversion', function() {
+        document.getElementById('attributes').create();
+        var route = document.getElementById('r1');
+        Excess.RouteManager.transitionTo('/abc/2000');
+        assert.isTrue(route.active);
+        route.subMenu = 2000; // numeric values should be converted to strings
+        assert.equal(route.subMenu, "2000");
+        assert.notOk(route.isDebouncerActive('paramNavigation'));
+        document.getElementById('attributes').restore();
       });
 
     });

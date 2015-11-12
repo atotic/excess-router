@@ -292,6 +292,12 @@ How would you use this in Polymer Starter Kit?
             return this[ATTR_PREFIX + name];
           },
           set: function(val) {
+            // enforce all navigation values to strings, because urls are strings
+            if ((typeof val) !== 'string') {
+              if (val !== undefined)
+                val = new String(val).toString();
+            }
+
             if (val === this[ATTR_PREFIX + name])
               return;
             // console.log('set ', name, val);
