@@ -542,28 +542,26 @@ setting unless you get conflicts
     },
 
     _findDestinations: function(destination, routeParams) {
+      var path;
+
       switch( this._getRouteType(destination)) {
         case 'alias':
           var route = this._findRouteByAlias(destination);
-           if (route) {
-            return {
-              routes: [{ route: route, routeParams: routeParams }],
-              destinationPath: route.getRoutePath(routeParams)
-            }
+          if (route) {
+            path = route.getRoutePath(routeParams)
           }
-          return;
+          break;
         case 'token':
           var route = this._findRouteByToken(destination).resolveAlias();
           if (route) {
-            return {
-              routes: [{ route: route, routeParams: routeParams}],
-              destinationPath: route.getRoutePath(routeParams)
-            }
+            path = route.getRoutePath(routeParams);
           }
-          return;
+          break;
         case 'path':
-          return this._matchRoutes(destination);
+          path = destination;
+          break;
       }
+      return this._matchRoutes(path);
     },
 
     /**

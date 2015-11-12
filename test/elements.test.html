@@ -43,7 +43,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="redirection">
     <template>
       <excess-route id="r1" route="/foo" route-alias="default"></excess-route>
-      <excess-route id="r2" route="/*" redirect-to="@default"></excess-route>
+      <excess-route id="r2" route="/*" redirect-to="@default" activation-modifiers="x"></excess-route>
     </template>
   </test-fixture>
 
