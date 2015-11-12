@@ -431,6 +431,7 @@ setting unless you get conflicts
     _getPushStateCallback: function() {
       return RouteManagerTest.updateStateCb ||
         function(routePath) {
+          // console.log("pushState", routePath);
           window.history.pushState(null, "",
             RouteManager._urlFromRoutePath(routePath));
         }
@@ -960,6 +961,8 @@ setting unless you get conflicts
 
     this._updateLocationCb = options ? options.updateLocationCb : null;
     this._destinationPath = options ? options.destinationPath : null;
+
+    // console.log("Transition", this._destinationPath);
   }
 
   Transition.prototype = {
@@ -971,7 +974,7 @@ setting unless you get conflicts
     abort: function(abortOptions) {
       if (this.aborted) // only first abort counts
         return;
-      // console.log('abort');
+      // console.log('abort', this._destinationPath);
 
       this.aborted = true;
       if (abortOptions) {

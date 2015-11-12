@@ -4,6 +4,7 @@
 0.9.7
 ==================
 * bugfix: activate multiple routes when transitioning via route
+* bugfix: excess-route._setAndReflectRouteParams can be called recursively, guard against it
 
 0.9.6
 ==================

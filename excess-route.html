@@ -254,6 +254,7 @@ How would you use this in Polymer Starter Kit?
       this._boundDeactivate = this._deactivate.bind(this);
       this._boundWillActivate = this._willActivate.bind(this);
       this._boundActivate = this._activate.bind(this);
+      this._blockParamNavigation = 0;
     },
 
     /**
@@ -366,10 +367,11 @@ How would you use this in Polymer Starter Kit?
       this._setActive(true);
     },
 
+    // this method might get called recursively
     _setAndReflectRouteParams: function(routeParams) {
       this._setRouteParams(routeParams);
       try {
-        this._blockParamNavigation = true;
+        this._blockParamNavigation++;
         for (var i=0; i<this._routeKeys.length; i++) {
           var key = this._routeKeys[i];
           if (key in routeParams) {
@@ -384,7 +386,7 @@ How would you use this in Polymer Starter Kit?
         console.error("unexpected error", err);
       }
       finally {
-        this._blockParamNavigation = false;
+        this._blockParamNavigation--;
       }
     },
 
