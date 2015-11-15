@@ -102,16 +102,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         document.getElementById('simple').restore();
       });
 
-      test('route params string conversion', function() {
-        document.getElementById('attributes').create();
-        var route = document.getElementById('r1');
-        Excess.RouteManager.transitionTo('/abc/2000');
-        assert.isTrue(route.active);
-        route.subMenu = 2000; // numeric values should be converted to strings
-        assert.equal(route.subMenu, "2000");
-        assert.notOk(route.isDebouncerActive('paramNavigation'));
-        document.getElementById('attributes').restore();
-      });
+      // This change was backed out
+      // test('route params string conversion', function() {
+      //   document.getElementById('attributes').create();
+      //   var route = document.getElementById('r1');
+      //   Excess.RouteManager.transitionTo('/abc/2000');
+      //   debugger;
+      //   assert.isTrue(route.active);
+      //   route.subMenu = 2000; // numeric values should be converted to strings
+      //   assert.equal(route.subMenu, "2000");
+      //   assert.notOk(route.isDebouncerActive('paramNavigation'));
+      //   document.getElementById('attributes').restore();
+      // });
 
     });
 

@@ -1,5 +1,6 @@
 0.9.8
 ==================
+* bugfix: #2 initialize excess-route.active to false
 
 0.9.7
 ==================
