@@ -1,6 +1,7 @@
 0.9.8
 ==================
 * bugfix: #2 initialize excess-route.active to false
+* bugfix: setting excess-route.redirect-to after route has been activated triggers redirect
 
 0.9.7
 ==================

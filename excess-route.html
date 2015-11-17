@@ -226,7 +226,8 @@ How would you use this in Polymer Starter Kit?
        * Route to redirect to. If set, route will redirect inside 'willActivate'
        */
       redirectTo: {
-        type: String
+        type: String,
+        observer: '_redirectToChanged'
       },
 
     },
@@ -412,6 +413,12 @@ How would you use this in Polymer Starter Kit?
       }
       this._routeKeys = Excess.RouteManager.getRouteKeys(newRoute);
       this._monitorAttributes(this._routeKeys);
+    },
+
+    _redirectToChanged: function(newRedirect, oldRedirect) {
+      if (newRedirect && this.active) {
+        Excess.RouteManager.transitionTo(newRedirect);
+      }
     },
 
     _routingInformationChanged: function(route) {

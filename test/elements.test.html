@@ -37,6 +37,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <template>
       <excess-route id="simpleRoute" route="/foo/bar"
       ></excess-route>
+      <excess-route id="abcSimple" route="/foot/ball"></excess-route>
     </template>
   </test-fixture>
 
@@ -102,18 +103,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         document.getElementById('simple').restore();
       });
 
-      // This change was backed out
-      // test('route params string conversion', function() {
-      //   document.getElementById('attributes').create();
-      //   var route = document.getElementById('r1');
-      //   Excess.RouteManager.transitionTo('/abc/2000');
-      //   debugger;
-      //   assert.isTrue(route.active);
-      //   route.subMenu = 2000; // numeric values should be converted to strings
-      //   assert.equal(route.subMenu, "2000");
-      //   assert.notOk(route.isDebouncerActive('paramNavigation'));
-      //   document.getElementById('attributes').restore();
-      // });
+      test('redirect-to after route changes', function() {
+        document.getElementById('simple').create();
+        var routeElement = document.getElementById('simpleRoute');
+        Excess.RouteManager.transitionTo('/foo/bar');
+        assert.isTrue(routeElement.active);
+        routeElement.redirectTo = '/foot/ball';
+        assert.equal(currentUrl, '/foot/ball');
+      });
 
     });
 
