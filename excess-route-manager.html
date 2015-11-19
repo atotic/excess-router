@@ -107,7 +107,7 @@
       // register route's alias
       if (route.alias) {
         if (this.routesByAlias[route.alias]) {
-          console.error(this._routesByAlias[route.alias]);
+          console.error(this.routesByAlias[route.alias]);
           throw new Error("Cant register two routes with same alias. "
             + route.alias + "has already been registered.");
         }
