@@ -510,6 +510,15 @@ setting unless you get conflicts
     },
 
     /**
+     * decodeUri routeParams in place
+     */
+    _decodeRouteParams: function(params) {
+      for (var p in params)
+        params[p] = decodeURIComponent(params[p]);
+      return params;
+    },
+
+    /**
      * finds matching route given a path
      * @return {{route: route, routeParams: params}}
      */
@@ -519,7 +528,7 @@ setting unless you get conflicts
         var route = RouterState.routes[i];
         var routeParams = route.match(path);
         if (routeParams) {
-          routes.push(  { route: route, routeParams: routeParams } );
+          routes.push(  { route: route, routeParams: this._decodeRouteParams(routeParams) } );
           if (route.activateStopPropagation) {
             break;   // stop searching for routes only this route
           }
@@ -979,7 +988,7 @@ setting unless you get conflicts
       this.aborted = true;
       if (abortOptions) {
         if (abortOptions.redirectTo) {
-          RouteManager.transitionTo(abortOptions.redirectTo, abortOptions.redirectParams);
+          RouteManager.replaceWith(abortOptions.redirectTo, abortOptions.redirectParams);
         } else if (abortOptions.prerequisite) {
           TODO("handle prerequisite");
         }
@@ -1148,6 +1157,8 @@ setting unless you get conflicts
 
     _deactivateDone: function() {
       if (this.aborted) {
+        console.error("Invalid excess-route transition: transition was aborted in the middle of deactivation. Do this in will-deactivate event handler instead");
+        throw new Error("Transition on deactivate is not allowed");
         return;
       }
       RouterState.setActiveRoutes(null);
@@ -1174,6 +1185,8 @@ setting unless you get conflicts
 
     _activateDone: function() {
       if (this.aborted) {
+        console.error("Invalid excess-route transition: transition was aborted in the middle of activation. Do this in will-activate event handler instead");
+        throw new Error("Transition on activate is not allowed");
         return;
       }
       // console.log('transition._activateDone', this._destinationPath);

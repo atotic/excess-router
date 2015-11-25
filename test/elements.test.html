@@ -112,6 +112,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         assert.equal(currentUrl, '/foot/ball');
       });
 
+      test('uri encoding', function() {
+        document.getElementById('attributes').create();
+        var routeElement = document.getElementById('r1');
+        routeElement.transitionTo({ main: "$%^", subMenu: "$%^"});
+        assert.equal(routeElement.main, "$%^");
+        assert.equal(currentUrl, "/%24%25%5E/%24%25%5E");
+      });
+
     });
 
 

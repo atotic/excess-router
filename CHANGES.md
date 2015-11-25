@@ -1,5 +1,8 @@
 0.9.9
 ==================
+* bugfix: uriDecode route matches
+* bugfix: throw errors on illegal route transitions (during activate/deactivate callbacks)
+* bugfix: redirect replaces the url, instead of doing a transition
 
 0.9.8
 ==================
