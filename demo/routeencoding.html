@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <title>route encoding test</title>
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+  <link rel="import" href="../excess-route.html">
+  <link rel="import" href="../excess-router-config.html">
+
+  <link rel="import" href="../../iron-input/iron-input.html">
+</head>
+<body>
+
+  <template is="dom-bind" id="t1">
+  <excess-router-config manual-start></excess-router-config>
+  <excess-route route="/:main" main="{{route}}"></excess-route>
+  <p>This input is bound to the route. Type, and watch the route change.
+  <a href="#/sample">/sample. route</a></p>
+  <p><input is="iron-input" bind-value="{{route}}"></p>
+  </template>
+
+  <script>
+    var t = document.querySelector('#t1');
+    t.addEventListener('dom-change', function() {
+       // manual start because we are inside dom-bind template
+      Excess.RouteManager.start();
+    });
+  </script>
+
+</body>
+</html>
