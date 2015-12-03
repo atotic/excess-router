@@ -1,15 +1,12 @@
-0.9.11
+0.9.10
 ==================
 
-0.9.10
+0.9.9
 ==================
 * bugfix: anchor click routing, no routing of right-clicks
 * bugfix: replaceState was pushing, not replacing
 * feature: add transitionStyle property to excess-route for cleaner history
 Lets you specify history.push vs history.replace for attribute-triggered transitions.
-
-0.9.9
-==================
 * bugfix: uriDecode route matches
 * bugfix: throw errors on illegal route transitions (during activate/deactivate callbacks)
 * bugfix: redirect replaces the url, instead of doing a transition
