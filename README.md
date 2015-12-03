@@ -141,7 +141,7 @@ How would you use this in Polymer Starter Kit?
 
 ## Notes
 
-Why excess-router? Because it uses [pathToRegexp](https://github.com/component/path-to-regexp), same route parsing library as express, and
+Why excess-router? Because it uses [pathToRegexp](https://github.com/pillarjs/path-to-regexp), same route parsing library as express, and
 it has an excess of features.
 
 My routing needs are simple. If you have some interesting ones, and
