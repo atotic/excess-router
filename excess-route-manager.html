@@ -607,7 +607,7 @@ setting unless you get conflicts
         dest.routes,
         {
           destinationPath: dest.destinationPath,
-          updateLocationCb: this._getPushStateCallback()
+          updateLocationCb: this._getReplaceStateCallback()
         }
       );
       RouterState.startTransition(transition);
@@ -677,6 +677,10 @@ setting unless you get conflicts
       else {
         if (!this._anchorRoutingListener) {
           this._anchorRoutingListener = document.addEventListener('click', function(ev) {
+            // only trap plain clicks, no  modifiers, right-buttons
+            if (ev.button !== 0 || ev.metaKey || ev.ctrlKey) {
+              return null;
+            }
             if (ev.target.nodeName === 'A') {
               if (this._routeAnchor(ev.target)) {
                 ev.preventDefault();

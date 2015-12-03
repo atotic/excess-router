@@ -15,7 +15,7 @@
 
   <template is="dom-bind" id="t1">
   <excess-router-config manual-start></excess-router-config>
-  <excess-route route="/:main" main="{{route}}"></excess-route>
+  <excess-route route="/:main" main="{{route}}" transition-style="replace"></excess-route>
   <p>This input is bound to the route. Type, and watch the route change.
   <a href="#/sample">/sample. route</a></p>
   <p><input is="iron-input" bind-value="{{route}}"></p>

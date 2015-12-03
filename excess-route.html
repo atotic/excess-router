@@ -177,16 +177,26 @@ How would you use this in Polymer Starter Kit?
       },
 
       /**
-       * Flags modifying how route will be activated
+       * Flags modifying when route will be activated
        * - 's' for stop. No routes will be matched after if this route activates
        * - 'x' for eXclusive. Route will only match if no other routes do.
        *
        * These flags are intended to be used with wildcard and redirect routes.
-       * Redirect routes should be exclusive
+       * Redirect routes should be exclusive to prevent recursion
        */
       activationModifiers: {
         type: String,
         value: ''
+      },
+
+      /**
+       * How should transitions triggered by attribute change navigate:
+       * - 'transition': creates new history entry with history.pushState
+       * - 'replace': replaces existing history entry with history.replaceState
+       */
+      transitionStyle: {
+        type: String,
+        value: 'transtion'
       },
 
       /**
@@ -403,7 +413,10 @@ How would you use this in Polymer Starter Kit?
         var key = this._routeKeys[i]
         routeParams[key] = this[key];
       }
-      this.transitionTo(routeParams);
+      if (this.transitionStyle === 'replace')
+        this.replaceWith(routeParams);
+      else
+        this.transitionTo(routeParams);
     },
 
     _routeChanged: function(newRoute, oldRoute) {

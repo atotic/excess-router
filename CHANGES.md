@@ -1,5 +1,12 @@
+0.9.11
+==================
+
 0.9.10
 ==================
+* bugfix: anchor click routing, no routing of right-clicks
+* bugfix: replaceState was pushing, not replacing
+* feature: add transitionStyle property to excess-route for cleaner history
+Lets you specify history.push vs history.replace for attribute-triggered transitions.
 
 0.9.9
 ==================
