@@ -1,5 +1,6 @@
 0.9.10
 ==================
+* bugfix: #6: IE does not work when hash is changed by hand
 
 0.9.9
 ==================

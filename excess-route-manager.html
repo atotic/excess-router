@@ -615,6 +615,7 @@ setting unless you get conflicts
 
     _setRouteFromLocation: function() {
       var path = this._extractLocationPath();
+      // console.log('_setRouteFromLocation', path);
       if (!path) {
         console.warn('popstate could not extract path',
           window.location.pathname);
@@ -742,10 +743,14 @@ setting unless you get conflicts
     },
 
     _handlePopState: function(ev) {
+      // console.log('popstate', ev.timeStamp);
+      this.popstatePath = this._extractLocationPath();  // IE Edge guard, see hashchange in IE
+      this.popstateTimeStamp = ev.timeStamp;
       this._setRouteFromLocation();
     },
 
     _handleHashChange: function(ev) {
+      // console.log("hashchange", ev.timeStamp);
       if (RouterState.pathStyle !== 'hash') {
         return;
       }
@@ -753,6 +758,15 @@ setting unless you get conflicts
       if (!path) {
         console.warn('hashchange could not extract path',
           window.location.hash);
+      }
+      else {
+        // IE workaround: https://connect.microsoft.com/IE/Feedback/Details/1528993
+        // On hash change, everyone fires 'popstate' and 'hashchange' except IE, and we transition in popstate
+        // IE only fires 'hashchange', so we need to transition here
+        // Here we guard from executing same transition twice on other browsers
+        if (path != this.popstatePath && (ev.timeStamp - ( this.popstateTimeStamp || 0) > 1)) {
+          this._setRouteFromLocation();
+        }
       }
     },
 
