@@ -1,6 +1,6 @@
 {
   "name": "excess-router",
-  "version": "0.9.10",
+  "version": "0.9.11",
   "description": "Express-style routing for Polymer",
   "homepage": "https://atotic.github.io/excess-router",
   "main": "excess-router.html",
