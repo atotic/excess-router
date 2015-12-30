@@ -306,6 +306,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         assert.notOk(t2calls.activate);
       });
 
+      test('getRoutePath', function() {
+        var route = Excess.RouteManager.register('/:foo', { alias: "fooalias" });
+        var p = Excess.RouteManager.getRoutePath(route, { foo: 'test'});
+        assert.equal(p, '/test');
+        p = Excess.RouteManager.getRoutePath('@fooalias', { foo: 'test'});
+        assert.equal(p, '/test');
+        p = Excess.RouteManager.getRoutePath('/:foo', {foo: 'test'});
+        assert.equal(p, '/test');
+      });
+
     });
 
 
