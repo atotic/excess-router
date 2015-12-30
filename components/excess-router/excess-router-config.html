@@ -1,0 +1,103 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="excess-route-manager.html">
+
+<script>
+
+/**
+`excess-router-config` configures Polymer.RoutingManager routing library
+
+Examples:
+
+    <excess-router-config
+      path-style="hash"
+      hash-prefix="#!"
+    ></excess-router-config>
+
+    <excess-router-config
+      path-style="path"
+      base-prefix="/my"
+    ></excess-router-config>
+
+@demo
+*/
+  Polymer({
+
+    is: 'excess-router-config',
+
+    properties: {
+
+      /**
+       * True if `<a href=` navigation should try router links first
+       */
+      anchorRouting: {
+        type: Boolean,
+        value: true
+      },
+      /**
+       * True if RouteManager starts on WebComponentsReady.
+       * If false, you must call RouterManager.start manually
+       */
+      manualStart: {
+        type: Boolean,
+        value: false
+      },
+      /**
+       * base path for path-based routing. Use it if your app is not mounted at the root.
+       * Example: app mounted on "http://example.com/polymerExamples/foo" should set the base path to `/polymerExamples/foo`
+       */
+      basePath: {
+        type: String,
+        value: ''
+      },
+
+      /**
+       * prefix for hash paths, must start with '#'
+       */
+      hashPrefix: {
+        type: String,
+        value: '#'
+      },
+
+      /**
+       * prefix for alias style paths
+       */
+      aliasPathPrefix: {
+        type: String,
+        value: '@'
+      },
+      /**
+       * 'hash' for '#' routing, 'path' for paths
+       */
+      pathStyle: {
+        type: String,
+        value: 'hash'
+      },
+
+      /**
+       * prefix for internally generated path tokens
+       */
+      tokenPrefix: {
+        type: String,
+        value: 'toke-'
+      }
+
+    },
+
+    observers: [
+      '_configurationChanged(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix)'
+    ],
+
+    _configurationChanged: function(anchorRouting, manualStart, basePath, hashPrefix, aliasPathPrefix, pathStyle, tokenPrefix) {
+      Excess.RouteManager.configure({
+        anchorRouting: anchorRouting,
+        autoStart: !manualStart,
+        basePath: basePath,
+        hashPrefix: hashPrefix,
+        aliasPathPrefix: aliasPathPrefix,
+        pathStyle: pathStyle,
+        tokenPrefix: tokenPrefix
+      });
+    }
+  });
+
+</script>

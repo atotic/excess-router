@@ -1,0 +1,466 @@
+<link rel="import" href="../polymer/polymer.html">
+<!--
+## excess-router
+
+Express-style routing for Polymer
+
+## Example
+```html
+<my-app>
+
+  <excess-route
+    route="/:topmenu"
+    topmenu="{{appMenu}}"
+  ></excess-route>
+  <excess-route route="/*" redirect_to="/first"></excess-route>
+
+  <iron-pages selected="{{appMenu}}" attr_for_selected="name">
+    <first-page name="first"></first-page>
+    <second-page name="second"></second-page>
+  </iron-pages>
+
+</my-app>
+```
+
+## Features
+
+`excess-router` is a standard full-featured router, implementing
+routing functionality also found in Angular, React, page.js.
+
+- two Polymer elments: `<excess-route>` and `<excess-router-config>`
+
+- Javascript library: `Excess.RouteManager`
+
+- [express-style](https://github.com/component/path-to-regexp) path matching
+```
+  '/users/:id', '/:topmenu/:submenu?', '/*'
+```
+- route aliases:
+```javascript
+  <excess-route route="/:topmenu" name="@main">
+  Excess.RouteManager.navigateTo('@main', {topmenu: '0'});
+```
+
+- redirection
+```html
+  <excess-route route="/*" redirect_to="/
+```
+
+- route transition lifecycle callbacks: willDeactivate, willActivate
+
+- anchor tag links are routed
+```
+  <a href="/mainmenu"></>
+```
+
+- multiple routes can be active at once.
+  - fine-grained control over matching: route can be active only if no others match
+  - see Polymer Starter Kit example below for usage examples.
+  - with this secret superpower, complex routing can be done with configuration only
+
+- configurable
+  - '#' hash, or '/' path style paths.
+  - hashPrefix
+  - manual start
+
+- lazy display/loading when you use [lazy-pages](https://github.com/atotic/lazy-pages)
+
+## How to use
+
+`<excess-route>` binds window's URL to its attributes.
+Route keys will be bound to `<excess-route>`'s properties. For example:
+```html
+<my-app>
+  <excess-route route="/users/:userId" user-id="{{appUserId}}">
+</my-app>
+```
+`:userId` key match will propagate to `excess-route.userId`, and `my-app.appUserId`.
+
+When window.location is '#/users/1'
+- excess-route.userId be 1
+- my-app.appUserId will be 1
+- setting my-app.appUserId to 999 will cause
+  - excess-route.userId to become 999
+  - which causes excess-route to call `Excess.RouteManager.navigateTo('/users/999')`
+  - which changes window.location to `#/users/999`
+
+Once route's keys have been reflected to your app, use Polymer's bindings to connect your route to `<iron-pages>`,
+`<neon-animated-pages>`, `<lazy-pages>`, or whatever your route uses for navigation.
+
+Not all routing use cases are covered just by using `<excess-route>`. If your problems become complex, you can drop down into Javascript and
+use `Excess.RouteManager` library and use your JS superpowers.
+
+## Example
+
+How would you use this in Polymer Starter Kit?
+
+
+    <my-app>
+      // this route routes the main menu
+      <excess-route
+        route="/:mainmenu/(.*)"
+        mainmenu="{{appRoute}}"></excess-route>
+      // this wildcard route will redirect to default route if no other routes match
+      <excess-route
+        route="/(.*)"
+        redirect-to="/home"
+        activation-modifiers="x"></excess-route>
+      <paper-menu attr-for-selected="route" selected="{{appRoute}}">
+        <a href="#/home" route="home">Home</a>
+        <a href="#/users/all" route="users">Users</a>
+        <a href="#/contact" route="contact">Contact</a>
+      </paper-menu>
+      <iron-pages attr-for-selected="route" selected="{{appRoute}}">
+        <section route="home">...</section>
+        <section route="users">
+          // this route manages /users subtree
+          <excess-route
+            route="/users/:userId"
+            user-id="{{userId}}"
+            active="{{hasUserId}}"></excess-route>
+          <template is="dom-if" if="{{!hasUserId}}">
+            // if user id is not specified, show a list of users
+            <section user="all">
+              <p>This is the users section</p>
+                <a href="#/users/Rob">Rob</a>
+            </section>
+          </template>
+          <template is="dom-if" if="{{hasUserId}}">
+            // if user id is specified, show the user
+            <iron-pages attr-for-selected="user" selected="{{userId}}">
+              <section user="Rob">
+                User:<span>{{userId}}</span>
+              </section>
+            </iron-pages>
+          </template>
+        </section>
+      </iron-pages>
+    </my-app>
+
+## Tips
+- setting a routes attribute to undefined will not trigger navigation, because navigating to undefined parameters is nonsensical
+@demo
+-->
+<dom-module id="excess-route">
+  <style>
+    :host {
+      display: block;
+    }
+  </style>
+  <template>
+    <content></content>
+  </template>
+</dom-module>
+<script>
+
+(function() {
+
+  'use strict';
+
+  var ATTR_PREFIX = 'ROUTE_PARAM_';
+
+  Polymer({
+
+    is: 'excess-route',
+
+    properties: {
+
+      /**
+       * True when route is active
+       */
+      active: {
+        type: Boolean,
+        value: false,
+        notify: true,
+        readOnly: true,
+        reflectToAttribute: true
+      },
+
+      /**
+       * Flags modifying when route will be activated
+       * - 's' for stop. No routes will be matched after if this route activates
+       * - 'x' for eXclusive. Route will only match if no other routes do.
+       *
+       * These flags are intended to be used with wildcard and redirect routes.
+       * Redirect routes should be exclusive to prevent recursion
+       */
+      activationModifiers: {
+        type: String,
+        value: ''
+      },
+
+      /**
+       * How should transitions triggered by attribute change navigate:
+       * - 'transition': creates new history entry with history.pushState
+       * - 'replace': replaces existing history entry with history.replaceState
+       */
+      transitionStyle: {
+        type: String,
+        value: 'transtion'
+      },
+
+      /**
+       * If route is active, routeParams are matching route parameters.
+       * Example:
+       *
+       * If route is `/user/:userId/review/:reviewId`
+       * and current URL is `/user/100/review/ABC`
+       *
+       * routeParam will be `{ userId: "100", reviewId: "ABC" }`
+       */
+      routeParams: {
+        type: Object,
+        notify: true,
+        readOnly: true
+      },
+
+      /**
+       * Route specified as:
+       * - An express style route (ex: '/foo/:bar')
+       * - An alias to an existing route ( '@foo')
+       */
+      route: {
+        type: String,
+        observer: '_routeChanged'
+      },
+
+      /**
+       * Route alias. If this route should have an alias, specify it here.
+       */
+      routeAlias: {
+        type: String,
+        value: ""
+      },
+
+      /**
+       * Route to redirect to. If set, route will redirect inside 'willActivate'
+       */
+      redirectTo: {
+        type: String,
+        observer: '_redirectToChanged'
+      },
+
+    },
+
+    observers: [
+      '_routingInformationChanged(route, routeAlias, activationModifiers)'
+    ],
+    /** EVENTS */
+
+    /**
+     * Fired before deactivation. preventDefault to cancel transition
+     *
+     * @event excess-route-will-deactivate
+     */
+
+    /**
+     * Fired before activation. preventDefault to cancel transition
+     * To redirect, do `ev.detail.transaction.abort({redirectTo: '/loc'});`
+     *
+     * @event excess-route-will-activate
+     * @param {object} detail
+     * @param {object} detail.activationParams
+     */
+
+    created: function() {
+      this._boundWillDeactivate = this._willDeactivate.bind(this);
+      this._boundDeactivate = this._deactivate.bind(this);
+      this._boundWillActivate = this._willActivate.bind(this);
+      this._boundActivate = this._activate.bind(this);
+      this._blockParamNavigation = 0;
+    },
+
+    /**
+     * Transition to this route.
+     *
+     * @param {object} routeParams -- must specify all parameters in this route, including any nested routes
+     */
+    transitionTo: function(routeParams) {
+      Excess.RouteManager.transitionTo(this._routeToken, routeParams);
+    },
+
+    /**
+     * Replace existing route with this one.
+     *
+     * @param {object} routeParams -- must specify all parameters in this route, including any nested routes
+     */
+    replaceWith: function(routeParams) {
+      Excess.RouteManager.replaceWith(this._routeToken, routeParams);
+    },
+
+    /**
+     * adds get/set methods for all attributes
+     */
+    _monitorAttributes: function(attributes) {
+       // console.log("monitoring", this.route, attributes);
+      var defProp = function(name) {
+        // munge userId -> user-id
+        var broadcastName = name.replace(/[A-Z]/g, function(match) {
+          return '-' + match.toLowerCase();
+        });
+        Object.defineProperty(this, name, {
+          configurable: true,
+          enumerable: true,
+          get: function() {
+            // console.log('get ', name);
+            return this[ATTR_PREFIX + name];
+          },
+          set: function(val) {
+            if (val === this[ATTR_PREFIX + name])
+              return;
+            // console.log('set ', name, val);
+            this[ATTR_PREFIX + name] = val;
+            this.fire(broadcastName + '-changed');
+            if (!this._blockParamNavigation && this.active && val != undefined) {
+              this.debounce('paramNavigation', this._navigateToAttributes);
+            }
+          }
+        });
+      }.bind(this);
+
+      for (var i=0; i<attributes.length; i++) {
+        defProp(attributes[i]);
+      }
+    },
+
+    /**
+     * Reverse _monitorAttributes
+     */
+    _stopMonitoringAttributes: function(attributes) {
+      // console.log("stop monitoring", attributes);
+      for (var i=0; i<attributes.length; i++) {
+        delete this[ATTR_PREFIX + name];
+        delete this[name];
+      }
+    },
+
+    _willDeactivate: function(transaction) {
+      var ev = this.fire(
+        'excess-route-will-deactivate',
+        { transaction: transaction },
+        { cancelable: true}
+      );
+      if (ev.defaultPrevented) {
+        transaction.abort();
+      }
+    },
+
+    _willActivate: function(transaction, activationParams) {
+      // redirected routes redirect on activation
+      if (this.redirectTo) {
+        if (this._redirecting) {
+          throw new Error("redirect loop detected", this.route);
+        }
+        this._redirecting = true;
+        transaction.abort( {
+          redirectTo: this.redirectTo
+        });
+        this._redirecting = false;
+        return;
+      }
+      var ev = this.fire(
+        'excess-route-will-activate',
+        { transaction: transaction },
+        { cancelable: true}
+      );
+      if (ev.defaultPrevented) {
+        transaction.abort();
+      }
+    },
+
+    _deactivate: function() {
+      // console.log("Inactive ", this.route);
+      this._setRouteParams(null);
+      this._setActive(false);
+    },
+
+    _activate: function(transaction, activationParams) {
+      // console.log("activate ", this.route);
+      this._setAndReflectRouteParams(activationParams.routeParams);
+      this._setActive(true);
+    },
+
+    // this method might get called recursively
+    _setAndReflectRouteParams: function(routeParams) {
+      this._setRouteParams(routeParams);
+      try {
+        this._blockParamNavigation++;
+        for (var i=0; i<this._routeKeys.length; i++) {
+          var key = this._routeKeys[i];
+          if (key in routeParams) {
+            this[key] = routeParams[key];
+          }
+          else {
+            this[key] = undefined;
+          }
+        }
+      }
+      catch(err) {
+        console.error("unexpected error", err);
+      }
+      finally {
+        this._blockParamNavigation--;
+      }
+    },
+
+    _navigateToAttributes: function() {
+      var routeParams = {};
+
+      for (var p in this.routeParams) {
+        routeParams[p] = this.routeParams[p];
+      }
+      for (var i=0; i<this._routeKeys.length; i++) {
+        var key = this._routeKeys[i]
+        routeParams[key] = this[key];
+      }
+      if (this.transitionStyle === 'replace')
+        this.replaceWith(routeParams);
+      else
+        this.transitionTo(routeParams);
+    },
+
+    _routeChanged: function(newRoute, oldRoute) {
+      // console.log("routeChanged", newRoute);
+      if (this._routeKeys) {
+        this._stopMonitoringAttributes(
+          Excess.RouteManager.getRouteKeys(oldRoute));
+      }
+      this._routeKeys = Excess.RouteManager.getRouteKeys(newRoute);
+      this._monitorAttributes(this._routeKeys);
+    },
+
+    _redirectToChanged: function(newRedirect, oldRedirect) {
+      if (newRedirect && this.active) {
+        Excess.RouteManager.transitionTo(newRedirect);
+      }
+    },
+
+    _routingInformationChanged: function(route) {
+      // console.log("_routingInformationChanged", route);
+      if (this._routeToken) {
+        Excess.RouteManager.unregister(this._routeToken);
+        this._routeToken = null;
+      }
+      if (route) {
+        var options = {
+          willDeactivate: this._boundWillDeactivate,
+          deactivate: this._boundDeactivate,
+          willActivate: this._boundWillActivate,
+          activate: this._boundActivate
+        }
+        if (this.routeAlias) {
+          options.alias = this.routeAlias;
+        }
+        if (this.activationModifiers) {
+          var mods = this.activationModifiers.toLowerCase();
+          options.activateExclusive = mods.indexOf('x') != -1;
+          options.activateStopPropagation = mods.indexOf('s') != -1;
+        }
+        this._routeToken = Excess.RouteManager.register(route, options);
+      }
+    },
+
+  });
+
+})();
+</script>

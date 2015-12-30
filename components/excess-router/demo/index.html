@@ -1,0 +1,310 @@
+<!doctype html>
+<html>
+<head>
+  <title>single route tutorial and demo</title>
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+  <link rel="import" href="../excess-route.html">
+  <link rel="import" href="../excess-router-config.html">
+
+  <link rel="import" href="../../iron-selector/iron-selector.html">
+  <link rel="import" href="../../iron-pages/iron-pages.html">
+  <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+  <link rel="import" href="../../marked-element/marked-element.html">
+  <link rel="import" href="../../prism-element/prism-highlighter.html">
+</head>
+<body>
+  <style>
+    excess-route[active] {
+      background-color: #AAA;
+    }
+
+    iron-selector > div {
+      border-bottom: 1px dashed gray;
+      cursor: pointer;
+    }
+    iron-selector > div.iron-selected {
+      background-color: #ECF2C8;
+    }
+    #warning {
+      border: 4px solid red;
+      font-size: larger;
+    }
+    p {
+      line-height: 170%;
+      margin: 0;
+    }
+    h3 {
+      margin: 8px 0 8px 0;
+    }
+    h4 {
+      margin: 8px 0 8px 0;
+    }
+    #example {
+      height: 250px;
+      max-width: 500px;
+      border: 1px solid blue;
+    }
+    .c1 {
+      color: red;
+    }
+    .c2 {
+      color: #50C7C3;
+    }
+    marked-element {
+      display: block;
+      height: 250px;
+      overflow: scroll;
+      border: 1px solid gray;
+      max-width:1024px;
+    }
+  </style>
+
+  <prism-highlighter></prism-highlighter>
+  <template is="dom-bind" id="t1">
+    <!-- FRAME WARNING -->
+    <template is="dom-if" if="{{inFrame}}">
+      <div id="warning">
+        <p>You can't view the URL changes because you are viewing this page in a frame.</p>
+        <p>You <b>want</b> to see that URL, that's what routing is all about</p>
+        <p><a href="" target="_new">Fix it</a> by opening this demo in a new window.</p>
+      </div>
+    </template>
+
+    <h3 style="font-size:24px"><code>excess-route</code></h3>
+    <p><code>excess-route</code> element is used to define your routes.</p>
+    <pre>&lt;excess-route route="/book" active="{{isActive}}">&lt;/excess-route></pre>
+    <p>You can think of <code>excess-route</code> as a regular expression that matches against <code><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/location">window.location</a></code>.</p>
+    <p>If match is successful, route activates and reflects match variables into its attributes.</p>
+    <h4>Example 1: the simplest route</h4>
+<pre>
+  &lt;excess-route route="/book" active="{{isActive}}">&lt;/excess-route>
+
+  // this route matches http://example.com/book, and nothing else
+</pre>
+    <h4>Example 2: parameter</h4>
+<pre>
+  &lt;excess-route route="/<span class="c1">:media</span>" media="{{<span class="c1">myMedia</span>}}">&lt;/excess-route>
+
+  // http://example.com/<span class="c1">book</span>, http://example.com/<span class="c1">movie</span> match
+  // http://example.com/movie/Groundhog does not match
+</pre>
+    <h4>Example 3: multiple parameters</h4>
+<pre>
+  &lt;excess-route route="/<span class="c1">:media</span>/<span class="c2">:title</span>" media="{{<span class="c1">myMedia</span>}}" title="{{<span class="c2">myTitle</span>}}">&lt;/excess-route>
+
+  // http://example.com/<span class="c1">movie</span>/<span class="c2">Groundhog</span> matches
+  // http://example.com/book, http://example.com/movie do not match because they have no title
+</pre>
+
+    <h4>Example 4: optional parameters</h4>
+    <p>you can use the full power of <a href="https://github.com/component/path-to-regexp">pathToRegex</a> expressions to define your routes</p>
+<pre>
+  &lt;excess-route route="/<span class="c1">:media</span>/<span class="c2">:title</span>?" media="{{<span class="c1">myMedia</span>}}" title="{{<span class="c2">myTitle</span>}}">&lt;/excess-route>
+
+  // http://example.com/<span class="c1">book</span>, http://example.com/<span class="c1">movie</span>, http://example.com/<span class="c1">movie</span>/<span class="c2">Groundhog</span> all match
+  // this is because title is now optional with ? flag
+</pre>
+    <h4>Example 5: wildcards</h4>
+<pre>
+  &lt;excess-route route="/<span class="c1">:media</span>/<span class="c2">(.*)</span>?" media="{{<span class="c1">myMedia</span>}}" >&lt;/excess-route>
+
+  // http://example.com/book, http://example.com/movie, http://example.com/movie/Groundhog all match
+  // title is not reflected into attributes
+</pre>
+    <h4>Example 6: redirection</h4>
+<pre>
+  &lt;excess-route route="/(.*)?" redirect-to="/start" activation-modifiers="x" >&lt;/excess-route>
+
+  // http://example.com/book, http://example.com/movie, http://example.com/movie/Groundhog all match
+  // they will be redirected to /start
+  // activation-modifiers are used to prevent recursion
+</pre>
+
+    <h4>Example 7: multiple routes</h4>
+<pre>
+  #1 &lt;excess-route route="/:topmenu/(.*)?" topmenu="{{myTopMenu}}">&lt;/excess-route>
+  #2 &lt;excess-route route="/movie" active="{{movieActive}}">&lt;/excess-route>
+  #3 &lt;excess-route route="/movie/:movieTitle" movie-title="{{myMovieTitle}}>&lt;/excess-route>
+  #4 &lt;excess-route route="/(.*)?" redirect-to="/movie" activation-modifiers="x">&lt;/excess-route>
+
+  // http://example.com/ will only match #4, and get redirected to http://example.com/movie
+  // http://example.com/movie will match #1 and #2
+  // http://example.com/book will match #1
+  // http://example.com/movie/Groundhog with match #1 and #3
+</pre>
+    <h4>Example 8: use routes to change the user interface</h4>
+<pre>
+  &lt;excess-route route="/<span class="c1">:topmenu</span>/(.*)?" topmenu="{{<span class="c1">myTopMenu</span>}}">&lt;/excess-route>
+  &lt;iron-page selected="{{<span class="c1">myTopMenu</span>}}">....&lt;/iron-page>
+  &lt;iron-selectable selected="{{<span class="c1">myTopMenu</span>}} attr-for-selected="name">
+    &lt;div name="movie">movies&lt;/div>
+    &lt;div name="book">book&lt;/div>
+  &lt;/iron-selectable>
+
+  // http://example.com/movie will match
+  // iron-page will display page 'movie'
+  // iron-selectable will select 'movie'
+  // clicking on book div will set <span class="c1">myTopMenu</span> to 'book'
+  // changing value of <span class="c1">myTopMenu</span> cause route to navigate to http://example.com/book
+</pre>
+<p>With these capabilities, you should be able to solve basic routing problems.</p>
+<p>For advanced problems that can't be solved with provided elements, use the Excess.RouteManager JavaScript API directly</p>
+
+<h3>Polymer Starter Kit demo</h3>
+<p>Polymer Starter Kit has the following pages:</p>
+    <ul>
+      <li>home page -- default page </li>
+      <li>contact page -- contact page</li>
+      <li>user list page -- shows a list of users</li>
+      <li>users/username pages -- shows information about particular user 'username'</li>
+    </ul>
+    <p>This translates into these routes:</p>
+    <pre>
+      // mainmenu switches between main pages: home|users|contact
+      // .* at the end allows it to match /users/username
+      &lt;excess-rote route="/:mainmenu/(.*)?" mainmenu="{{main}}">&lt;/excess-route>
+
+      // users/username matches when particular user is requested
+      &lt;excess-route route="/users/:username" username="{{user}}">&lt;/excess-route>
+
+      // wildcard redirects to our demo route, if no other route matches
+      &lt;excess-route route="/(.*)" redirect-to="/home" activation-modifiers="x">&lt;/excess-route>
+    </pre>
+    <p>Combine these routes with the existing UI, conditional templates, and you've got a router app.</p>
+    <p>Source:</p>
+   <marked-element>
+        <div class="markdown-html"></div>
+        <script type="text/markdown">
+```html
+<div id="example">
+  <excess-route route="/:main/(.*)?" main="{{mainmenu}}"></excess-route>
+  <excess-route route="/users/:userId" user-id="{{userId}}" active="{{userActive}}"></excess-route>
+  <excess-route route="/(.*)" redirect-to="/home" activation-modifiers="x"></excess-route>
+    <div flex>
+      <iron-selector selected="{{mainmenu}}" attr-for-selected="name">
+        <div name="home">home</div>
+        <div name="users">users</div>
+        <div name="contact">contact</div>
+      </iron-selector>
+    </div>
+    <div flex>
+      <iron-pages selected="{{mainmenu}}" attr-for-selected="name">
+        <div name="home">I am the home page.</div>
+        <div name="contact">I am the contact page.</div>
+        <div name="users" >
+          <template is="dom-if" if="{{!userActive}}" restamp>
+              <p>List of users</p>
+              <ul>
+                <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Alpha')">Alpha</a></li>
+                <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Bravo')">Bravo</a></li>
+                <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Dieter')">Dieter</a></li>
+                <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Milorad')">Milorad</a></li>
+              </ul>
+              <p>The links above are javascript so they'll work with both hash and path routing. Links below are bare, no js:</p>
+              <p><a href="#/users/Sierra">Sierra</a> is a sample hash link</p>
+              <p><a href="users/Juliet">Juliet</a> is a sample path link</p>
+          </template>
+          <template is="dom-if" if="{{userActive}}" restamp>
+            <p>This user's name is <span>{{userId}}</span></p>
+          </template>
+        </div>
+      </iron-pages>
+    </div>
+</div>
+```
+        </script>
+    </marked-element>
+<p>Live</p>
+<div id="example" class="layout horizontal">
+  <excess-route route="/:main/(.*)?" main="{{mainmenu}}"></excess-route>
+  <excess-route route="/users/:userId" user-id="{{userId}}" active="{{userActive}}"></excess-route>
+  <excess-route route="/(.*)" redirect-to="/home" activation-modifiers="x"></excess-route>
+    <div flex style="width: 20%;border-right: 1px solid gray; padding: 8px; background-color: #D2E3D2">
+      <iron-selector selected="{{mainmenu}}" attr-for-selected="name">
+        <div name="home">home</div>
+        <div name="users">users</div>
+        <div name="contact">contact</div>
+      </iron-selector>
+    </div>
+    <div flex style="width: 80%;background-color: #DEE5DE;padding:8px" >
+      <iron-pages selected="{{mainmenu}}" attr-for-selected="name">
+        <div name="home" style="font-size:larger;font-style:italic"><i>I am the home page.</i></div>
+        <div name="contact" style="font-size:larger;font-weight:900">I am the contact page.</div>
+        <div name="users" >
+          <template is="dom-if" if="{{!userActive}}" restamp>
+              <p>List of users</p>
+              <ul>
+                <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Alpha')">Alpha</a></li>
+                <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Bravo')">Bravo</a></li>
+                <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Dieter')">Dieter</a></li>
+                <li><a href="javascript:Excess.RouteManager.transitionTo('/users/Milorad')">Milorad</a></li>
+              </ul>
+              <p>The links above are javascript so they'll work with both hash and path routing. Links below are bare, no js:</p>
+              <p><a href="#/users/Sierra">Sierra</a> is a sample hash link</p>
+              <p><a href="users/Juliet">Juliet</a> is a sample path link</p>
+          </template>
+          <template is="dom-if" if="{{userActive}}" restamp>
+            <p>This user's name is <span>{{userId}}</span></p>
+          </template>
+        </div>
+      </iron-pages>
+    </div>
+</div>
+
+<h3>Further topics</h3>
+<p>That should be enough to get you started. If you just can't get enough of this, here are a few more things:</p>
+
+<h3>Global configuration</h3>
+<excess-router-config manual-start
+  path-style="{{pathStyle}}"
+  base-path="{{basePath}}"
+  ></excess-router-config>
+
+<p><code>excess-router-config</code> element configures global router settings.</p>
+<p>This menu lets you demo and switch between different path styles</p>
+<select id="select" value="{{pathStyle::change}}">
+  <option value="hash">Hash</option>
+  <option value="path">Path</option>
+</select>
+
+
+<h3>Navigation</h3>
+<p>How do you transition between routes</p>
+<ol>
+  <li>Change active route's properties. That's what we are using for main navigation in the example</li>
+  <li>Anchor navigation. Excess routing library can intercept anchor clicks and route them. Raw user links in the example use this.</li>
+  <li>Javascript. Call the routing library directly: <code>Excess.RouteManager.transitionTo(), replaceWith()</code></li>
+  <li>javascript: user links in the example use this.</li>
+</ol>
+<h3>Even more</h3>
+<p>The Polymer elements are built on top of a javascript library, Excess.RouteManager. Library provides functionality similar to page.js</p>
+<p>Read the element docs to learn more about configuration options, transition's lifecycle, and other advanced topics.</p>
+<p><a href="https://github.com/atotic/lazy-pages">lazy-pages</a> are a replacement for iron-page and neon-animated-page. They have routing-friendly extensions: lazy loading, <del>lazy imports</del>, and  value correction to guard against bad routes.</p>
+</template>
+
+  <script>
+    function inFrame () {
+      try {
+          return window.self !== window.top;
+      } catch (e) {
+          return true;
+      }
+    }
+
+    var t = document.querySelector('#t1');
+    t.addEventListener('dom-change', function() {
+      t.userActive = false;
+      t.pathStyle = 'hash';
+      var m = window.location.pathname.match(/(.*)\/demo/);
+      t.basePath = m ? m[1] + '/demo' : '';
+      t.inFrame = inFrame();
+       // manual start because we are inside dom-bind template
+      Excess.RouteManager.start();
+    });
+  </script>
+
+</body>
+</html>
