@@ -537,7 +537,7 @@ setting unless you get conflicts
      */
     _decodeRouteParams: function(params) {
       for (var p in params)
-        params[p] = decodeURIComponent(params[p]);
+        params[p] = params[p] === undefined ? undefined : decodeURIComponent(params[p]);
       return params;
     },
 
