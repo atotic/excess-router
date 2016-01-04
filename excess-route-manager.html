@@ -514,22 +514,29 @@ setting unless you get conflicts
      * @return {string} -- decoded path
      */
     getRoutePath: function(routeSpecifier, params) {
+      var path;
       switch(this._getRouteType(routeSpecifier)) {
         case 'alias':
           var r = this._findRouteByAlias(routeSpecifier);
           if (!r) {
             throw new Error("Route alias not registered");
           }
-          return r.resolveAlias().getRoutePath(params);
+          path = r.resolveAlias().getRoutePath(params);
+          break;
         case 'token':
           var r = this._findRouteByToken(routeSpecifier).resolveAlias();
           if (!r) {
             throw new Error("Route, or route's alias not registered");
           }
-          return r.getRoutePath(params);
+          path = r.getRoutePath(params);
+          break;
         case 'path':
-          return pathToRegexp.compile(routeSpecifier)(params);
+          path = pathToRegexp.compile(routeSpecifier)(params);
+          break;
+        default:
+          throw new Error('unknown path type');
       }
+      return RouterState.basePath ? RouterState.basePath + path : path;
     },
 
     /**
