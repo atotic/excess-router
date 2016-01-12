@@ -1,6 +1,7 @@
 0.9.12
 ==================
 * bug: #10 parameter navigation sets optionals to undefined if not present
+* bug: getRoutePath ignored basePath
 
 0.9.11
 ==================
