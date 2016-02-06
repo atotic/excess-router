@@ -668,6 +668,13 @@ setting unless you get conflicts
     },
 
     _routeAnchor: function(anchor) {
+	  do {
+		if (anchor.nodeName === 'A') break;
+	  } while (anchor.parentNode && (anchor = anchor.parentNode));
+
+	  if (anchor.nodeName !== 'A')
+		return false;
+
       if (anchor.protocol === 'javascript:')
         return false;
       var route;
@@ -712,10 +719,8 @@ setting unless you get conflicts
             if (ev.button !== 0 || ev.metaKey || ev.ctrlKey) {
               return null;
             }
-            if (ev.target.nodeName === 'A') {
-              if (this._routeAnchor(ev.target)) {
-                ev.preventDefault();
-              }
+            if (this._routeAnchor(ev.target)) {
+              ev.preventDefault();
             }
           }.bind(this));
         }
