@@ -54,7 +54,14 @@
         randomString += charSet.substring(randomPoz,randomPoz+1);
     }
     return randomString;
-  };
+  }
+
+  function normalizeString(str) {
+    if (str === undefined || str === null)
+      str = "";
+
+    return str;
+  }
 
   /**
   RouterState stores RouteManager configuration.
@@ -677,18 +684,31 @@ setting unless you get conflicts
 
       if (anchor.protocol === 'javascript:')
         return false;
+
+      if (anchor.protocol !== location.protocol ||
+          // location.username and password are undefined when not set,
+          // whereas the anchor's properties are empty strings
+          normalizeString(anchor.username) !== normalizeString(location.username) ||
+          normalizeString(anchor.password) !== normalizeString(location.password) ||
+          anchor.host !== location.host)
+        return false;
+
       var route;
       switch(RouterState.pathStyle) {
         case 'hash':
           route = anchor.hash;
           if (StringStartsWith(route, RouterState.hashPrefix)) {
             route = route.replace(RouterState.hashPrefix, '');
+          } else {
+            return false;
           }
           break;
         case 'path':
           route = anchor.pathname;
           if (StringStartsWith(route,RouterState.basePath)) {
             route = route.replace(RouterState.basePath, '');
+          } else {
+            return false;
           }
           break;
       }
@@ -698,7 +718,7 @@ setting unless you get conflicts
           return true;
         }
         catch(err) {
-          console.warn('anchor route not found', route);
+          // An unknown route, something else is handling it
           return false;
         }
       }
