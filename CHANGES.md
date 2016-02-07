@@ -1,5 +1,9 @@
+0.9.14
+==================
+
 0.9.13
 ==================
+* bug: Fixes for various issues connected with anchor handling
 
 0.9.12
 ==================
