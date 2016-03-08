@@ -324,6 +324,7 @@ setting unless you get conflicts
 - To redirect a route
   - Register the route
   - Inside routes's activate handler, abort the transition with 'redirectTo' path
+  - see https://github.com/atotic/excess-router/issues/17 for javascript example
 
 - Debugging
   - print all paths with `Excess.RouteManagerTest.print()`
@@ -373,6 +374,13 @@ setting unless you get conflicts
      * @param {boolean} options.isAliasRoute -- true if this is a aliased route
      * @param {boolean} option.activateExclusive -- true if this route can only be activated on its own
      * @param {boolean} option.activateStopPropagation -- true if no routes will match after this one
+
+     These are the transition lifecycle callbacks
+     * @param {function(transaction)} options.willDeactivate --
+     * @param {function(transaction)} options.deactivate --
+     * @param {function(transaction, { routeParams: {} }) , function done} options.willActivate --
+     * @param {function(transaction, { routeParams: {} }) , function done} options.activate --
+
      * @return {string}} -- token, you need this to unregister
      */
     register: function(path, options) {
