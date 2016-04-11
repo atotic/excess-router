@@ -683,12 +683,15 @@ setting unless you get conflicts
     },
 
     _routeAnchor: function(anchor) {
-	  do {
-		if (anchor.nodeName === 'A') break;
-	  } while (anchor.parentNode && (anchor = anchor.parentNode));
+  	  do {
+  		if (anchor.nodeName === 'A') break;
+  	  } while (anchor.parentNode && (anchor = anchor.parentNode));
 
-	  if (anchor.nodeName !== 'A')
-		return false;
+      if (anchor.target === '_blank')
+        return false;
+
+  	  if (anchor.nodeName !== 'A')
+  		  return false;
 
       if (anchor.protocol === 'javascript:')
         return false;
