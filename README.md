@@ -1,3 +1,11 @@
+## app-route
+Polymer team has released an official routing element, 
+[app-route](https://github.com/PolymerElements/app-route). 
+That is the element most Polymer apps will use, and if I was starting 
+from scratch on a long-term project, I'd try that first.
+For a quick spin, excess-route is great, it should get you going in
+minutes.
+
 ## excess-router
 
 Express-style routing for Polymer
